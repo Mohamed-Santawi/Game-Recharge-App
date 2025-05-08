@@ -31,7 +31,7 @@ const Order = ({ order }) => {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.3 }}
-      className="rounded-lg shadow-md p-3 mb-3 w-full"
+      className="rounded-lg shadow-md p-2 lg:p-3 w-full"
       style={{
         background:
           "linear-gradient(152.13deg, #060A0E -19.62%, #3B4550 36.86%, #192531 93.34%)",
@@ -61,30 +61,26 @@ const Order = ({ order }) => {
           </motion.span>
         </div>
 
-        {/* Bottom row: Price, Cash Back, and Date */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-6">
-            <motion.div
-              className="flex items-center space-x-1"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2 }}
-            >
+        {/* Middle row: Price and Cash Back */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-2">
+          <div className="flex flex-col lg:flex-row lg:space-x-6 space-y-2 lg:space-y-0">
+            <div className="flex items-center space-x-1">
               <span className="text-gray-300">Price:</span>
               <span className="text-green-400 font-semibold">
                 ${order.price.toFixed(2)}
               </span>
-            </motion.div>
-            <motion.div
-              className="flex items-center space-x-1"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2 }}
-            >
+            </div>
+            <div className="flex items-center space-x-1">
               <span className="text-gray-300">Cash Back:</span>
               <span className="text-green-400 font-semibold">
                 ${order.cashBack.toFixed(2)}
               </span>
-            </motion.div>
+            </div>
           </div>
+        </div>
+
+        {/* Bottom row: Date */}
+        <div className="flex justify-end">
           <span className="text-gray-400 text-sm">
             {formatDate(order.date)}
           </span>

@@ -340,7 +340,7 @@ const UserWallet = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="w-full lg:w-[600px] h-[650px] lg:h-[750px] bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-6 lg:p-8"
+            className="w-full lg:w-[600px] h-auto lg:h-[750px] bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 p-2 lg:p-8"
           >
             {/* Tabs */}
             <div className="flex space-x-2 lg:space-x-4 mb-4 lg:mb-6">
@@ -380,7 +380,7 @@ const UserWallet = () => {
 
             {/* Orders Tab */}
             {activeTab === "orders" && (
-              <div className="flex-1 bg-[#121A22]/40 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-white/5 h-[calc(100%-60px)] overflow-y-auto">
+              <div className="flex-1 bg-[#121A22]/40 backdrop-blur-sm rounded-2xl p-2 lg:p-6 border border-white/5 h-auto lg:h-[calc(100%-60px)]">
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-0 mb-4 lg:mb-6">
                   <h2 className="text-xl lg:text-2xl font-bold text-white">
                     Order History
@@ -394,7 +394,7 @@ const UserWallet = () => {
                     Add Order
                   </motion.button>
                 </div>
-                <div className="w-full">
+                <div className="w-full -mx-2 lg:mx-0">
                   <OrdersList orders={orders} />
                 </div>
               </div>
