@@ -9,7 +9,17 @@ const Home = () => {
   const [userInitial, setUserInitial] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (currentUser?.displayName) {
@@ -18,15 +28,11 @@ const Home = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    // Preload the background image
     const img = new Image();
     img.src = ninjaImage;
     img.onload = () => {
       setImageLoaded(true);
-      // Add a small delay to ensure smooth transition
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
+      setIsLoading(false);
     };
   }, []);
 
@@ -50,25 +56,25 @@ const Home = () => {
 
   return (
     <div className="min-h-screen relative">
-      {/* Loading State - Always present initially */}
+      {/* Loading State - Minimal */}
       <div
-        className={`fixed inset-0 flex items-center justify-center bg-[#0a0a0a] z-50 transition-opacity duration-500 ${
+        className={`fixed inset-0 flex items-center justify-center bg-[#0a0a0a] z-50 transition-opacity duration-200 ${
           isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading...</p>
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-base">Loading...</p>
         </div>
       </div>
 
       {/* Main Content */}
       <div
-        className={`transition-opacity duration-500 ${
+        className={`transition-opacity duration-200 ${
           isLoading ? "opacity-0" : "opacity-100"
         }`}
       >
-        {/* Full Screen Background */}
+        {/* Full Screen Background - Optimized */}
         <div
           className="fixed inset-0 w-full h-full"
           style={{
@@ -84,7 +90,7 @@ const Home = () => {
             transform: "translateZ(0)",
             backfaceVisibility: "hidden",
             opacity: imageLoaded ? 1 : 0,
-            transition: "opacity 0.5s ease-in-out",
+            transition: "opacity 0.2s ease-in-out",
           }}
         />
 
@@ -101,7 +107,7 @@ const Home = () => {
             willChange: "transform",
             backfaceVisibility: "hidden",
             opacity: imageLoaded ? 1 : 0,
-            transition: "opacity 0.5s ease-in-out",
+            transition: "opacity 0.2s ease-in-out",
           }}
         />
 
@@ -216,7 +222,7 @@ const Home = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.3 }}
               className="text-center"
             >
               <motion.h1
