@@ -28,12 +28,22 @@ const Home = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    const img = new Image();
-    img.src = ninjaImage;
-    img.onload = () => {
-      setImageLoaded(true);
-      setIsLoading(false);
+    const preloadImage = () => {
+      const img = new Image();
+      img.src = ninjaImage;
+      img.onload = () => {
+        setImageLoaded(true);
+        setIsLoading(false);
+      };
     };
+
+    preloadImage();
+
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = ninjaImage;
+    document.head.appendChild(link);
   }, []);
 
   const handleSignOut = async () => {
