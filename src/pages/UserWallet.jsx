@@ -381,18 +381,20 @@ const UserWallet = () => {
             {/* Orders Tab */}
             {activeTab === "orders" && (
               <div className="flex-1 bg-[#121A22]/40 backdrop-blur-sm rounded-2xl p-2 lg:p-6 border border-white/5 h-auto lg:h-[calc(100%-60px)]">
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-0 mb-4 lg:mb-6">
-                  <h2 className="text-xl lg:text-2xl font-bold text-white">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+                  <h2 className="text-xl lg:text-2xl font-bold text-white text-center lg:text-left">
                     Order History
                   </h2>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowAddOrderModal(true)}
-                    className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all duration-300 text-sm lg:text-base w-full lg:w-auto"
-                  >
-                    Add Order
-                  </motion.button>
+                  <div className="flex items-center space-x-2 mt-4 lg:mt-0">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowAddOrderModal(true)}
+                      className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all duration-300 text-sm lg:text-base w-full lg:w-auto"
+                    >
+                      Add Order
+                    </motion.button>
+                  </div>
                 </div>
                 <div className="w-full -mx-2 lg:mx-0">
                   <OrdersList orders={orders} />

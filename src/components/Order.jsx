@@ -31,7 +31,7 @@ const Order = ({ order }) => {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.3 }}
-      className="rounded-lg shadow-md p-2 lg:p-3 w-full"
+      className="rounded-lg shadow-md mx-2 px-4 py-2 lg:mx-0 lg:p-3 w-full"
       style={{
         background:
           "linear-gradient(152.13deg, #060A0E -19.62%, #3B4550 36.86%, #192531 93.34%)",
