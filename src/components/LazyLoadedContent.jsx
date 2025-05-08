@@ -1,20 +1,25 @@
 import { motion } from "framer-motion";
 
-const LazyLoadedContent = ({ handleWalletClick }) => {
+const LazyLoadedContent = ({ handleWalletClick, isMobile }) => {
+  // Disable animations on mobile
+  const getInitialState = (defaultState) => (isMobile ? false : defaultState);
+  const getTransition = (defaultTransition) =>
+    isMobile ? { duration: 0 } : defaultTransition;
+
   return (
     <>
       <motion.p
-        initial={{ opacity: 0, y: -20 }}
+        initial={getInitialState({ opacity: 0, y: -20 })}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
+        transition={getTransition({ duration: 0.6, delay: 0.3 })}
         className="text-2xl md:text-3xl text-gray-300 mb-2 font-light"
       >
         Your Gaming Journey Starts Here
       </motion.p>
       <motion.p
-        initial={{ opacity: 0, y: -20 }}
+        initial={getInitialState({ opacity: 0, y: -20 })}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
+        transition={getTransition({ duration: 0.6, delay: 0.4 })}
         className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed"
       >
         Experience the future of gaming with instant recharges, exclusive
@@ -23,9 +28,9 @@ const LazyLoadedContent = ({ handleWalletClick }) => {
       </motion.p>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={getInitialState({ opacity: 0, y: 20 })}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.5 }}
+        transition={getTransition({ duration: 0.6, delay: 0.5 })}
         className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12"
       >
         <motion.div
@@ -91,9 +96,9 @@ const LazyLoadedContent = ({ handleWalletClick }) => {
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={getInitialState({ opacity: 0, y: 20 })}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
+        transition={getTransition({ duration: 0.6, delay: 0.6 })}
         className="flex flex-col md:flex-row justify-center items-center gap-6 mb-12"
       >
         <motion.div
@@ -120,14 +125,13 @@ const LazyLoadedContent = ({ handleWalletClick }) => {
       </motion.div>
 
       <motion.div
-        whileHover={{
-          scale: 1.05,
-          transition: { duration: 0.2 },
-        }}
-        whileTap={{ scale: 0.95 }}
-        initial={{ opacity: 0, y: 20 }}
+        whileHover={
+          isMobile ? {} : { scale: 1.05, transition: { duration: 0.2 } }
+        }
+        whileTap={isMobile ? {} : { scale: 0.95 }}
+        initial={getInitialState({ opacity: 0, y: 20 })}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.7 }}
+        transition={getTransition({ duration: 0.6, delay: 0.7 })}
         className="mb-8"
       >
         <button

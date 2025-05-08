@@ -32,19 +32,24 @@ const Home = () => {
   }, [currentUser]);
 
   useEffect(() => {
+    // Show content immediately on mobile
+    if (isMobile) {
+      setIsLoading(false);
+    }
+
     const preloadImage = () => {
       const img = new Image();
       img.src = ninjaImage;
       img.onload = () => {
         setImageLoaded(true);
-        setTimeout(
-          () => {
+        if (!isMobile) {
+          setTimeout(() => {
             setIsLoading(false);
-            // Start loading lazy content after critical content is loaded
             setShowLazyContent(true);
-          },
-          isMobile ? 100 : 200
-        );
+          }, 200);
+        } else {
+          setShowLazyContent(true);
+        }
       };
     };
 
@@ -59,6 +64,7 @@ const Home = () => {
     link.fetchPriority = "high";
     document.head.appendChild(link);
 
+    // Optimize for mobile viewport
     if (isMobile) {
       document.documentElement.style.setProperty(
         "--vh",
@@ -93,17 +99,19 @@ const Home = () => {
 
   return (
     <div className="min-h-screen relative">
-      {/* Loading State - Optimized for mobile */}
-      <div
-        className={`fixed inset-0 flex items-center justify-center bg-[#0a0a0a] z-50 transition-opacity duration-150 ${
-          isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-      >
-        <div className="text-center">
-          <div className="w-10 h-10 md:w-12 md:h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-sm md:text-base">Loading...</p>
+      {/* Loading State - Minimal for mobile */}
+      {!isMobile && (
+        <div
+          className={`fixed inset-0 flex items-center justify-center bg-[#0a0a0a] z-50 transition-opacity duration-150 ${
+            isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="text-center">
+            <div className="w-10 h-10 md:w-12 md:h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white text-sm md:text-base">Loading...</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <div
@@ -166,7 +174,7 @@ const Home = () => {
           }}
         />
 
-        {/* Critical Content */}
+        {/* Content */}
         <div className="relative z-10 min-h-screen">
           {/* Navigation */}
           <nav className="p-0">
@@ -264,18 +272,18 @@ const Home = () => {
           {/* Main Content */}
           <main className="max-w-7xl mx-auto px-4 pt-8">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={isMobile ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: isMobile ? 0 : 0.3 }}
               className="text-center"
             >
               {/* Critical Content */}
               <motion.h1
-                initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                initial={isMobile ? false : { opacity: 0, y: -20, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{
-                  duration: 0.8,
-                  delay: 0.2,
+                  duration: isMobile ? 0 : 0.8,
+                  delay: isMobile ? 0 : 0.2,
                   type: "spring",
                   stiffness: 100,
                 }}
@@ -294,7 +302,10 @@ const Home = () => {
                     </div>
                   }
                 >
-                  <LazyLoadedContent handleWalletClick={handleWalletClick} />
+                  <LazyLoadedContent
+                    handleWalletClick={handleWalletClick}
+                    isMobile={isMobile}
+                  />
                 </Suspense>
               )}
             </motion.div>
