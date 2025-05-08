@@ -125,7 +125,7 @@ const Home = () => {
                         </div>
                       )}
                     </button>
-                    <div className="absolute right-0 mt-2 w-48 bg-white/10 backdrop-blur-lg rounded-lg shadow-lg border border-white/20 hidden group-hover:block">
+                    <div className="absolute right-0 mt-2 w-48 bg-white/10 backdrop-blur-lg rounded-lg shadow-lg border border-white/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                       <div className="py-2">
                         <div className="px-4 py-2 text-white">
                           {currentUser.displayName}
@@ -135,7 +135,7 @@ const Home = () => {
                         </div>
                         <button
                           onClick={handleSignOut}
-                          className="w-full text-left px-4 py-2 text-white hover:bg-white/10"
+                          className="w-full text-left px-4 py-2 text-white hover:bg-white/10 transition-colors duration-200"
                         >
                           Sign Out
                         </button>
