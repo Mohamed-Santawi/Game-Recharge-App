@@ -33,7 +33,12 @@ const Home = () => {
       img.src = ninjaImage;
       img.onload = () => {
         setImageLoaded(true);
-        setIsLoading(false);
+        setTimeout(
+          () => {
+            setIsLoading(false);
+          },
+          isMobile ? 100 : 200
+        );
       };
     };
 
@@ -43,8 +48,22 @@ const Home = () => {
     link.rel = "preload";
     link.as = "image";
     link.href = ninjaImage;
+    link.fetchPriority = "high";
     document.head.appendChild(link);
-  }, []);
+
+    if (isMobile) {
+      document.documentElement.style.setProperty(
+        "--vh",
+        `${window.innerHeight * 0.01}px`
+      );
+      window.addEventListener("resize", () => {
+        document.documentElement.style.setProperty(
+          "--vh",
+          `${window.innerHeight * 0.01}px`
+        );
+      });
+    }
+  }, [isMobile]);
 
   const handleSignOut = async () => {
     try {
@@ -66,45 +85,47 @@ const Home = () => {
 
   return (
     <div className="min-h-screen relative">
-      {/* Loading State - Minimal */}
+      {/* Loading State - Optimized for mobile */}
       <div
-        className={`fixed inset-0 flex items-center justify-center bg-[#0a0a0a] z-50 transition-opacity duration-200 ${
+        className={`fixed inset-0 flex items-center justify-center bg-[#0a0a0a] z-50 transition-opacity duration-150 ${
           isLoading ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-base">Loading...</p>
+          <div className="w-10 h-10 md:w-12 md:h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-sm md:text-base">Loading...</p>
         </div>
       </div>
 
       {/* Main Content */}
       <div
-        className={`transition-opacity duration-200 ${
+        className={`transition-opacity duration-150 ${
           isLoading ? "opacity-0" : "opacity-100"
         }`}
       >
-        {/* Full Screen Background - Optimized */}
+        {/* Full Screen Background - Mobile Optimized */}
         <div
           className="fixed inset-0 w-full h-full"
           style={{
             backgroundImage: `url(${ninjaImage})`,
-            backgroundSize: "100% 100%",
+            backgroundSize: isMobile ? "cover" : "100% 100%",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
             backgroundColor: "#0a0a0a",
             width: "100%",
-            height: "100%",
+            height: isMobile ? "calc(var(--vh, 1vh) * 100)" : "100%",
             objectFit: "fill",
             willChange: "transform",
             transform: "translateZ(0)",
             backfaceVisibility: "hidden",
             opacity: imageLoaded ? 1 : 0,
-            transition: "opacity 0.2s ease-in-out",
+            transition: "opacity 0.15s ease-in-out",
+            WebkitTransform: "translateZ(0)",
+            WebkitBackfaceVisibility: "hidden",
           }}
         />
 
-        {/* Mobile-specific background - Optimized */}
+        {/* Mobile-specific background - Further Optimized */}
         <div
           className="fixed inset-0 w-full h-full md:hidden"
           style={{
@@ -117,11 +138,14 @@ const Home = () => {
             willChange: "transform",
             backfaceVisibility: "hidden",
             opacity: imageLoaded ? 1 : 0,
-            transition: "opacity 0.2s ease-in-out",
+            transition: "opacity 0.15s ease-in-out",
+            WebkitTransform: "translateZ(0)",
+            WebkitBackfaceVisibility: "hidden",
+            height: "calc(var(--vh, 1vh) * 100)",
           }}
         />
 
-        {/* Dark Overlay - Optimized */}
+        {/* Dark Overlay - Mobile Optimized */}
         <div
           className="fixed inset-0"
           style={{
@@ -129,6 +153,8 @@ const Home = () => {
               "linear-gradient(159.42deg, rgba(6, 10, 14, 0.7) 3.3%, rgba(59, 69, 80, 0.7) 48.96%, rgba(25, 37, 49, 0.7) 94.61%)",
             willChange: "opacity",
             transform: "translateZ(0)",
+            WebkitTransform: "translateZ(0)",
+            height: isMobile ? "calc(var(--vh, 1vh) * 100)" : "100%",
           }}
         />
 
