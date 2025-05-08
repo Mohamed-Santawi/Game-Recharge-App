@@ -94,8 +94,23 @@ const UserWallet = () => {
           backgroundSize: "100% 100%",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          backgroundAttachment: "fixed",
           backgroundColor: "#0a0a0a",
+          width: "100%",
+          height: "100%",
+          objectFit: "fill",
+        }}
+      />
+
+      {/* Mobile-specific background */}
+      <div
+        className="fixed inset-0 w-full h-full md:hidden"
+        style={{
+          backgroundImage: `url(${ghostImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundColor: "#0a0a0a",
+          transform: "scale(1.2)",
         }}
       />
 

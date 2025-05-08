@@ -43,11 +43,23 @@ const Home = () => {
           backgroundSize: "100% 100%",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          backgroundAttachment: "fixed",
           backgroundColor: "#0a0a0a",
-          objectFit: "cover",
-          width: "100vw",
-          height: "100vh",
+          width: "100%",
+          height: "100%",
+          objectFit: "fill",
+        }}
+      />
+
+      {/* Mobile-specific background */}
+      <div
+        className="fixed inset-0 w-full h-full md:hidden"
+        style={{
+          backgroundImage: `url(${ninjaImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundColor: "#0a0a0a",
+          transform: "scale(1.2)",
         }}
       />
 
