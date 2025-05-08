@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
-import ninjaImage from "../assets/ninja.jpg";
+import ninjaImage from "../assets/ninja.webp";
 
 const Home = () => {
   const { currentUser, logout } = useAuth();

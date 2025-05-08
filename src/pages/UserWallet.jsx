@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import ghostImage from "../assets/ghost.png";
-import cardImage from "../assets/card.png";
+import ghostImage from "../assets/ghost.webp";
+import cardImage from "../assets/card.webp";
 import { motion, AnimatePresence } from "framer-motion";
 import OrdersList from "../components/OrdersList";
 

@@ -9,7 +9,7 @@ import {
 import { auth, storage } from "../config/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { motion } from "framer-motion";
-import firedninjaImage from "../assets/firedninja.png";
+import firedninjaImage from "../assets/firedninja.webp";
 
 const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
