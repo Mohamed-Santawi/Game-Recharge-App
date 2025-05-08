@@ -124,13 +124,18 @@ const Home = () => {
           className="fixed inset-0 w-full h-full"
           style={{
             backgroundImage: `url(${ninjaImage})`,
-            backgroundSize: isMobile ? "cover" : "100% 100%",
+            backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
             backgroundColor: "#0a0a0a",
             width: "100%",
-            height: isMobile ? "calc(var(--vh, 1vh) * 100)" : "100%",
-            objectFit: "fill",
+            height: "100%",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            objectFit: "cover",
             willChange: "transform",
             transform: "translateZ(0)",
             backfaceVisibility: "hidden",
@@ -138,26 +143,6 @@ const Home = () => {
             transition: "opacity 0.15s ease-in-out",
             WebkitTransform: "translateZ(0)",
             WebkitBackfaceVisibility: "hidden",
-          }}
-        />
-
-        {/* Mobile-specific background - Critical */}
-        <div
-          className="fixed inset-0 w-full h-full md:hidden"
-          style={{
-            backgroundImage: `url(${ninjaImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            backgroundColor: "#0a0a0a",
-            transform: "scale(1.2) translateZ(0)",
-            willChange: "transform",
-            backfaceVisibility: "hidden",
-            opacity: imageLoaded ? 1 : 0,
-            transition: "opacity 0.15s ease-in-out",
-            WebkitTransform: "translateZ(0)",
-            WebkitBackfaceVisibility: "hidden",
-            height: "calc(var(--vh, 1vh) * 100)",
           }}
         />
 
@@ -170,7 +155,12 @@ const Home = () => {
             willChange: "opacity",
             transform: "translateZ(0)",
             WebkitTransform: "translateZ(0)",
-            height: isMobile ? "calc(var(--vh, 1vh) * 100)" : "100%",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "100%",
           }}
         />
 
