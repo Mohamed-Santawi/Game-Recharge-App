@@ -134,9 +134,6 @@ const Home = () => {
                         <div className="px-4 py-2 text-white">
                           {currentUser.displayName}
                         </div>
-                        <div className="px-4 py-2 text-white">
-                          {currentUser.email}
-                        </div>
                         <button
                           onClick={handleSignOut}
                           className="w-full text-left px-4 py-2 text-white hover:bg-white/10"
