@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
 import OptimizedBackground from "../components/OptimizedBackground";
-
+import {stitch} from "../assets/download.png"
 // Lazy load non-critical components
 const LazyLoadedContent = lazy(() => import("../components/LazyLoadedContent"));
 
