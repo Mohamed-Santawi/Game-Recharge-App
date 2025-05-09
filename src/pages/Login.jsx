@@ -1,3 +1,4 @@
+import firedninjaImage from "../assets/firedninja.webp";
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
