@@ -16,6 +16,7 @@ const Login = () => {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -27,7 +28,7 @@ const Login = () => {
     confirmPassword: "",
     fullName: "",
   });
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, currentUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -56,6 +57,12 @@ const Login = () => {
     const timeout = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timeout);
   }, [isMobile]);
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate("/");
+    }
+  }, [currentUser, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -170,33 +177,16 @@ const Login = () => {
       setGoogleLoading(true);
       setError("");
       setSuccess("");
+      setIsRedirecting(true);
 
-      // Attempt Google sign in with mobile detection
-      const result = await signInWithGoogle();
+      // Attempt Google sign in
+      await signInWithGoogle();
 
-      // Always create initial avatar for Google sign in
-      const avatar = generateInitialAvatar(result.user.displayName);
-      const initialAvatarUrl = `https://ui-avatars.com/api/?name=${
-        avatar.initial
-      }&background=${avatar.backgroundColor.replace(
-        "#",
-        ""
-      )}&color=fff&size=128&bold=true`;
-
-      // Update profile with initial avatar
-      await updateProfile(result.user, {
-        photoURL: initialAvatarUrl,
-      });
-
-      setSuccess("Welcome! Your account has been created successfully.");
-
-      // Short delay to show success message
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Navigate to home
-      navigate("/");
+      // Note: We don't need to handle the result here anymore
+      // as it's handled in the AuthContext
     } catch (error) {
       console.error("Google sign in error:", error);
+      setIsRedirecting(false);
 
       // Enhanced error handling for mobile
       switch (error.code) {
@@ -253,8 +243,8 @@ const Login = () => {
 
   return (
     <div className="min-h-screen relative">
-      {/* Loading State - Only show on desktop */}
-      {!isMobile && isLoading && (
+      {/* Loading State - Show for both desktop and mobile when redirecting */}
+      {(isLoading || isRedirecting) && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a0a] z-50">
           <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
@@ -415,13 +405,15 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#60A5FA] hover:bg-[#60A5FA]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#60A5FA] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center justify-center w-full px-8 py-3 overflow-hidden font-medium text-white transition-all duration-300 ease-out rounded-lg shadow-lg group bg-[#121A22]/40 border border-white/5 hover:bg-[#121A22]/60 hover:shadow-primary/20 before:absolute before:bottom-0 before:left-0 before:w-full before:h-0.5 before:bg-white/10 before:transition-all before:duration-300 hover:before:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading
-                  ? "Processing..."
-                  : isSignUp
-                  ? "Create Account"
-                  : "Sign In"}
+                <span className="relative z-10">
+                  {loading
+                    ? "Processing..."
+                    : isSignUp
+                    ? "Create Account"
+                    : "Sign In"}
+                </span>
               </button>
             </div>
           </form>

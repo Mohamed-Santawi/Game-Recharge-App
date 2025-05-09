@@ -7,6 +7,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithRedirect,
+  getRedirectResult,
+  updateProfile,
 } from "firebase/auth";
 import {
   getDoc,
@@ -72,6 +74,64 @@ export const AuthProvider = ({ children }) => {
   const [customerProfit, setCustomerProfit] = useState(10); // Default 10% profit for customer
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Add redirect result handling
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          // User successfully signed in with redirect
+          console.log("Redirect sign in successful:", result.user);
+
+          // Create initial avatar
+          const avatar = generateInitialAvatar(result.user.displayName);
+          const initialAvatarUrl = `https://ui-avatars.com/api/?name=${
+            avatar.initial
+          }&background=${avatar.backgroundColor.replace(
+            "#",
+            ""
+          )}&color=fff&size=128&bold=true`;
+
+          // Update profile with initial avatar
+          await updateProfile(result.user, {
+            photoURL: initialAvatarUrl,
+          });
+
+          // Initialize user data
+          await initializeUserData(result.user);
+        }
+      } catch (error) {
+        console.error("Error handling redirect result:", error);
+      }
+    };
+
+    handleRedirectResult();
+  }, []);
+
+  // Function to initialize user data
+  const initializeUserData = async (user) => {
+    try {
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+
+      if (!userDoc.exists()) {
+        // Create new user document
+        await setDoc(doc(db, "users", user.uid), {
+          email: user.email,
+          displayName: user.displayName,
+          createdAt: new Date().toISOString(),
+          totalCashBack: 0,
+          todaySpending: 0,
+          referralEarnings: 0,
+          referralCode: `REF${user.uid.slice(0, 6).toUpperCase()}`,
+          currentDiscountCode: "KZQMPW83",
+          isAdmin: false,
+        });
+      }
+    } catch (error) {
+      console.error("Error initializing user data:", error);
+    }
+  };
+
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
@@ -79,19 +139,20 @@ export const AuthProvider = ({ children }) => {
       // Add custom parameters for better mobile handling
       provider.setCustomParameters({
         prompt: "select_account",
-        // Force account selection even if one account is available
-        // This helps prevent issues on mobile devices
       });
 
       // Use signInWithRedirect for mobile devices
       if (window.innerWidth <= 768) {
         await signInWithRedirect(auth, provider);
-        // The redirect will handle the rest
         return;
       }
 
       // Use signInWithPopup for desktop
       const result = await signInWithPopup(auth, provider);
+
+      // Initialize user data for popup sign in
+      await initializeUserData(result.user);
+
       return result;
     } catch (error) {
       console.error("Google sign in error:", error);
