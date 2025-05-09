@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import ghostImage from "../assets/ghost.webp";
+import cardImage from "../assets/card.webp";
 import { motion, AnimatePresence } from "framer-motion";
 import OrdersList from "../components/OrdersList";
 
@@ -24,7 +26,8 @@ const UserWallet = () => {
   const [activeTab, setActiveTab] = useState("orders");
   const [showAddOrderModal, setShowAddOrderModal] = useState(false);
   const [isBackButtonVisible, setIsBackButtonVisible] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [newOrder, setNewOrder] = useState({
     gameName: "",
     amount: "",
@@ -45,6 +48,19 @@ const UserWallet = () => {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    // Preload the background image
+    const img = new Image();
+    img.src = ghostImage;
+    img.onload = () => {
+      setImageLoaded(true);
+      // Add a small delay to ensure smooth transition
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+    };
   }, []);
 
   if (!currentUser) {
@@ -85,43 +101,6 @@ const UserWallet = () => {
 
   return (
     <div className="min-h-screen relative">
-      {/* Background - Using gradient instead of image */}
-      <div
-        className="fixed inset-0 w-full h-full"
-        style={{
-          background:
-            "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          willChange: "transform",
-          transform: "translateZ(0)",
-          backfaceVisibility: "hidden",
-          WebkitTransform: "translateZ(0)",
-          WebkitBackfaceVisibility: "hidden",
-        }}
-      />
-
-      {/* Dark Overlay */}
-      <div
-        className="fixed inset-0"
-        style={{
-          background:
-            "linear-gradient(159.42deg, rgba(6, 10, 14, 0.7) 3.3%, rgba(41, 97, 255, 0.1) 48.96%, rgba(6, 10, 14, 0.7) 94.61%)",
-          willChange: "opacity",
-          transform: "translateZ(0)",
-          WebkitTransform: "translateZ(0)",
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: "100%",
-        }}
-      />
-
       {/* Loading State - Always present initially */}
       <div
         className={`fixed inset-0 flex items-center justify-center bg-[#0a0a0a] z-50 transition-opacity duration-500 ${
@@ -140,6 +119,54 @@ const UserWallet = () => {
           isLoading ? "opacity-0" : "opacity-100"
         }`}
       >
+        {/* Full Screen Background */}
+        <div
+          className="fixed inset-0 w-full h-full"
+          style={{
+            backgroundImage: `url(${ghostImage})`,
+            backgroundSize: "100% 100%",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundColor: "#0a0a0a",
+            width: "100%",
+            height: "100%",
+            objectFit: "fill",
+            willChange: "transform",
+            transform: "translateZ(0)",
+            backfaceVisibility: "hidden",
+            opacity: imageLoaded ? 1 : 0,
+            transition: "opacity 0.5s ease-in-out",
+          }}
+        />
+
+        {/* Mobile-specific background - Optimized */}
+        <div
+          className="fixed inset-0 w-full h-full md:hidden"
+          style={{
+            backgroundImage: `url(${ghostImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundColor: "#0a0a0a",
+            transform: "scale(1.2) translateZ(0)",
+            willChange: "transform",
+            backfaceVisibility: "hidden",
+            opacity: imageLoaded ? 1 : 0,
+            transition: "opacity 0.5s ease-in-out",
+          }}
+        />
+
+        {/* Dark Overlay - Optimized */}
+        <div
+          className="fixed inset-0"
+          style={{
+            background:
+              "linear-gradient(159.42deg, rgba(6, 10, 14, 0.6) 3.3%, rgba(59, 69, 80, 0.6) 48.96%, rgba(25, 37, 49, 0.6) 94.61%)",
+            willChange: "opacity",
+            transform: "translateZ(0)",
+          }}
+        />
+
         {/* Back to Home Button */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -186,9 +213,9 @@ const UserWallet = () => {
               <div
                 className="absolute inset-0 w-full h-full"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
-                  opacity: 0.9,
+                  backgroundImage: `url(${cardImage})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
                 }}
               />
 
