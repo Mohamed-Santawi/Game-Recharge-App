@@ -200,6 +200,11 @@ const Login = () => {
 
       // Enhanced error handling for mobile
       switch (error.code) {
+        case "auth/unauthorized-domain":
+          setError(
+            "This domain is not authorized for Google sign in. Please try signing in with email and password, or contact support to add your domain."
+          );
+          break;
         case "auth/popup-closed-by-user":
           setError("Sign in was cancelled. Please try again.");
           break;
@@ -221,11 +226,6 @@ const Login = () => {
             "This browser doesn't support Google sign in. Please try a different browser."
           );
           break;
-        case "auth/unauthorized-domain":
-          setError(
-            "This domain is not authorized for Google sign in. Please contact support."
-          );
-          break;
         case "auth/web-storage-unsupported":
           setError(
             "Your browser doesn't support required features. Please try a different browser."
@@ -235,6 +235,10 @@ const Login = () => {
           if (error.message.includes("popup")) {
             setError(
               "Unable to open sign in window. Please try using a different browser or device."
+            );
+          } else if (error.message.includes("domain")) {
+            setError(
+              "Domain authorization error. Please try signing in with email and password, or contact support."
             );
           } else {
             setError(
