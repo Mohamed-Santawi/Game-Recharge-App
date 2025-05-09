@@ -80,24 +80,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const result = await getRedirectResult(auth);
         if (result) {
-          // User successfully signed in with redirect
-          console.log("Redirect sign in successful:", result.user);
-
-          // Create initial avatar
-          const avatar = generateInitialAvatar(result.user.displayName);
-          const initialAvatarUrl = `https://ui-avatars.com/api/?name=${
-            avatar.initial
-          }&background=${avatar.backgroundColor.replace(
-            "#",
-            ""
-          )}&color=fff&size=128&bold=true`;
-
-          // Update profile with initial avatar
-          await updateProfile(result.user, {
-            photoURL: initialAvatarUrl,
-          });
-
-          // Initialize user data
+          // Initialize user data after successful redirect
           await initializeUserData(result.user);
         }
       } catch (error) {
@@ -147,6 +130,7 @@ export const AuthProvider = ({ children }) => {
       if (isMobile) {
         // For mobile devices, use redirect
         await signInWithRedirect(auth, provider);
+        // The redirect will happen here, and the auth state will be handled by the useEffect
         return;
       }
 
