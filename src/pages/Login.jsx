@@ -2,6 +2,7 @@ import firedninjaImage from "../assets/firedninja.webp";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { motion } from "framer-motion";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -402,19 +403,27 @@ const Login = () => {
             </div>
 
             <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="relative inline-flex items-center justify-center w-full px-8 py-3 overflow-hidden font-medium text-white transition-all duration-300 ease-out rounded-lg shadow-lg group bg-[#121A22]/40 border border-white/5 hover:bg-[#121A22]/60 hover:shadow-primary/20 before:absolute before:bottom-0 before:left-0 before:w-full before:h-0.5 before:bg-white/10 before:transition-all before:duration-300 hover:before:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed"
+              <motion.div
+                whileHover={
+                  isMobile ? {} : { scale: 1.05, transition: { duration: 0.2 } }
+                }
+                whileTap={isMobile ? {} : { scale: 0.95 }}
+                className="mb-8"
               >
-                <span className="relative z-10">
-                  {loading
-                    ? "Processing..."
-                    : isSignUp
-                    ? "Create Account"
-                    : "Sign In"}
-                </span>
-              </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="relative inline-flex items-center justify-center w-full px-8 py-3 overflow-hidden font-medium text-white transition-all duration-300 ease-out rounded-lg shadow-lg group bg-[#121A22]/40 border border-white/5 hover:bg-[#121A22]/60 hover:shadow-primary/20 before:absolute before:bottom-0 before:left-0 before:w-full before:h-0.5 before:bg-white/10 before:transition-all before:duration-300 hover:before:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="relative z-10">
+                    {loading
+                      ? "Processing..."
+                      : isSignUp
+                      ? "Create Account"
+                      : "Sign In"}
+                  </span>
+                </button>
+              </motion.div>
             </div>
           </form>
 

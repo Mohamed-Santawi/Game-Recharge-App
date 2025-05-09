@@ -139,6 +139,9 @@ export const AuthProvider = ({ children }) => {
       // Add custom parameters for better mobile handling
       provider.setCustomParameters({
         prompt: "select_account",
+        // Add these parameters for better mobile handling
+        authType: "signInWithRedirect",
+        redirectUrl: window.location.origin,
       });
 
       // Use signInWithRedirect for mobile devices
