@@ -150,7 +150,7 @@ const Home = () => {
               ) : (
                 <Link
                   to="/login"
-                  className="px-6 py-2.5 text-white bg-[#121A22]/40 rounded-lg border border-white/5 hover:bg-[#121A22]/60"
+                  className="relative inline-flex items-center justify-center px-8 py-3 overflow-hidden font-medium text-white transition-all duration-300 ease-out rounded-lg shadow-lg group bg-[#121A22]/40 border border-white/5 hover:bg-[#121A22]/60 hover:shadow-primary/20 before:absolute before:bottom-0 before:left-0 before:w-full before:h-0.5 before:bg-white/10 before:transition-all before:duration-300 hover:before:bg-primary/80"
                 >
                   Login
                 </Link>

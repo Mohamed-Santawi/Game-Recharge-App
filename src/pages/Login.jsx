@@ -415,13 +415,11 @@ const Login = () => {
                   disabled={loading}
                   className="relative inline-flex items-center justify-center w-full px-8 py-3 overflow-hidden font-medium text-white transition-all duration-300 ease-out rounded-lg shadow-lg group bg-[#121A22]/40 border border-white/5 hover:bg-[#121A22]/60 hover:shadow-primary/20 before:absolute before:bottom-0 before:left-0 before:w-full before:h-0.5 before:bg-white/10 before:transition-all before:duration-300 hover:before:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span className="relative z-10">
-                    {loading
-                      ? "Processing..."
-                      : isSignUp
-                      ? "Create Account"
-                      : "Sign In"}
-                  </span>
+                  {loading
+                    ? "Processing..."
+                    : isSignUp
+                    ? "Create Account"
+                    : "Sign In"}
                 </button>
               </motion.div>
             </div>

@@ -139,18 +139,18 @@ export const AuthProvider = ({ children }) => {
       // Add custom parameters for better mobile handling
       provider.setCustomParameters({
         prompt: "select_account",
-        // Add these parameters for better mobile handling
-        authType: "signInWithRedirect",
-        redirectUrl: window.location.origin,
       });
 
-      // Use signInWithRedirect for mobile devices
-      if (window.innerWidth <= 768) {
+      // Check if we're on mobile
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // For mobile devices, use redirect
         await signInWithRedirect(auth, provider);
         return;
       }
 
-      // Use signInWithPopup for desktop
+      // For desktop, use popup
       const result = await signInWithPopup(auth, provider);
 
       // Initialize user data for popup sign in
