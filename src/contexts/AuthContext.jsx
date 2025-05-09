@@ -74,21 +74,38 @@ export const AuthProvider = ({ children }) => {
   const [customerProfit, setCustomerProfit] = useState(10); // Default 10% profit for customer
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Add redirect result handling
+  // Update the redirect result handler
   useEffect(() => {
+    let isHandlingRedirect = false;
+
     const handleRedirectResult = async () => {
+      if (isHandlingRedirect) return;
+      isHandlingRedirect = true;
+
       try {
+        console.log("Checking for redirect result...");
         const result = await getRedirectResult(auth);
+
         if (result) {
-          // Initialize user data after successful redirect
+          console.log("Redirect sign in successful, initializing user data...");
+          // Initialize user data immediately after successful redirect
           await initializeUserData(result.user);
+          // Force update the current user
+          setCurrentUser(result.user);
+          // Set loading to false to ensure the app renders
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error handling redirect result:", error);
+      } finally {
+        isHandlingRedirect = false;
       }
     };
 
+    // Call immediately and also set up a small delay to ensure we catch the result
     handleRedirectResult();
+    const timeoutId = setTimeout(handleRedirectResult, 1000);
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Function to initialize user data
@@ -119,27 +136,16 @@ export const AuthProvider = ({ children }) => {
     try {
       const provider = new GoogleAuthProvider();
 
-      // Add custom parameters for better mobile handling
+      // Simple configuration for better compatibility
       provider.setCustomParameters({
         prompt: "select_account",
       });
 
-      // Check if we're on mobile
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      console.log("Starting Google Sign In process...");
 
-      if (isMobile) {
-        // For mobile devices, use redirect
-        await signInWithRedirect(auth, provider);
-        // The redirect will happen here, and the auth state will be handled by the useEffect
-        return;
-      }
-
-      // For desktop, use popup
+      // Use popup for all devices
       const result = await signInWithPopup(auth, provider);
-
-      // Initialize user data for popup sign in
       await initializeUserData(result.user);
-
       return result;
     } catch (error) {
       console.error("Google sign in error:", error);
@@ -202,28 +208,35 @@ export const AuthProvider = ({ children }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Update the auth state change handler
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("Auth state changed:", user); // Debug log
-      setCurrentUser(user);
+      console.log("Auth state changed:", user ? "User signed in" : "No user");
 
       if (user) {
-        // Load user data including discount code
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        const userData = userDoc.data();
+        try {
+          console.log("Loading user data...");
+          // Load user data including discount code
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          const userData = userDoc.data();
 
-        if (userData) {
-          setIsAdmin(userData.isAdmin || false);
-          setCurrentDiscountCode(userData.currentDiscountCode || "KZQMPW83");
-          setTotalCashBack(userData.totalCashBack || 0);
-          setTodaySpending(userData.todaySpending || 0);
-          setReferralEarnings(userData.referralEarnings || 0);
-          setReferralCode(userData.referralCode || "");
+          if (userData) {
+            console.log("User data loaded successfully");
+            setIsAdmin(userData.isAdmin || false);
+            setCurrentDiscountCode(userData.currentDiscountCode || "KZQMPW83");
+            setTotalCashBack(userData.totalCashBack || 0);
+            setTodaySpending(userData.todaySpending || 0);
+            setReferralEarnings(userData.referralEarnings || 0);
+            setReferralCode(userData.referralCode || "");
+          } else {
+            console.log("No user data found, initializing...");
+            await initializeUserData(user);
+          }
+        } catch (error) {
+          console.error("Error loading user data:", error);
         }
-
-        // Initialize discount codes
-        await initializeDiscountCodes();
       } else {
+        console.log("User signed out, resetting states...");
         // Reset states when user logs out
         setCurrentDiscountCode("");
         setIsAdmin(false);
@@ -233,6 +246,7 @@ export const AuthProvider = ({ children }) => {
         setReferralCode("");
       }
 
+      setCurrentUser(user);
       setLoading(false);
     });
 
