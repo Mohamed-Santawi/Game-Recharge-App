@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
-import OptimizedBackground from "../components/OptimizedBackground";
+import ninjaImage from "../assets/ninja.webp";
 
 // Lazy load non-critical components
 const LazyLoadedContent = lazy(() => import("../components/LazyLoadedContent"));
@@ -11,8 +11,10 @@ const Home = () => {
   const { currentUser, logout } = useAuth();
   const [userInitial, setUserInitial] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showLazyContent, setShowLazyContent] = useState(false);
+  const [imageLoadingStage, setImageLoadingStage] = useState(0); // 0: not started, 1: loading, 2: loaded
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,17 +33,50 @@ const Home = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    // Show content immediately on mobile
+    // Show content immediately on mobile with a loading state
     if (isMobile) {
+      setImageLoadingStage(1);
       setIsLoading(false);
-      setShowLazyContent(true);
-    } else {
-      // Add slight delay for desktop to ensure smooth transitions
-      setTimeout(() => {
-        setIsLoading(false);
-        setShowLazyContent(true);
-      }, 200);
     }
+
+    const preloadImage = () => {
+      const img = new Image();
+
+      // Start loading animation
+      setImageLoadingStage(1);
+
+      img.onload = () => {
+        setImageLoaded(true);
+        setImageLoadingStage(2);
+        if (!isMobile) {
+          setTimeout(() => {
+            setIsLoading(false);
+            setShowLazyContent(true);
+          }, 200);
+        } else {
+          setShowLazyContent(true);
+        }
+      };
+
+      img.src = ninjaImage;
+    };
+
+    // Start preloading immediately
+    preloadImage();
+
+    // Add image to browser cache with high priority
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = ninjaImage;
+    link.fetchPriority = "high";
+    document.head.appendChild(link);
+
+    return () => {
+      if (link.parentNode) {
+        link.parentNode.removeChild(link);
+      }
+    };
   }, [isMobile]);
 
   const handleSignOut = async () => {
@@ -86,8 +121,76 @@ const Home = () => {
           isLoading ? "opacity-0" : "opacity-100"
         }`}
       >
-        {/* Optimized Background with LQIP */}
-        <OptimizedBackground isMobile={isMobile} />
+        {/* Background Loading States */}
+        <div
+          className={`fixed inset-0 w-full h-full bg-[#0a0a0a] transition-opacity duration-300 ${
+            imageLoadingStage === 0 ? "opacity-100" : "opacity-0"
+          }`}
+        />
+
+        {/* Critical Background - Loaded First */}
+        <div
+          className="fixed inset-0 w-full h-full"
+          style={{
+            backgroundImage: `url(${ninjaImage})`,
+            backgroundSize: isMobile ? "cover" : "100% 100%",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundColor: "#0a0a0a",
+            width: "100%",
+            height: "100%",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            objectFit: "cover",
+            willChange: "transform",
+            transform: "translateZ(0)",
+            backfaceVisibility: "hidden",
+            opacity: imageLoadingStage === 2 ? 1 : 0,
+            transition: "opacity 0.3s ease-in-out",
+            WebkitTransform: "translateZ(0)",
+            WebkitBackfaceVisibility: "hidden",
+          }}
+        />
+
+        {/* Loading Placeholder */}
+        <div
+          className={`fixed inset-0 w-full h-full transition-opacity duration-300 ${
+            imageLoadingStage === 1 ? "opacity-100" : "opacity-0"
+          }`}
+          style={{
+            background: "linear-gradient(45deg, #0a0a0a 0%, #1a1a1a 100%)",
+          }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-white text-lg">Loading your experience...</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Dark Overlay - Critical */}
+        <div
+          className={`fixed inset-0 transition-opacity duration-300 ${
+            imageLoadingStage === 2 ? "opacity-100" : "opacity-0"
+          }`}
+          style={{
+            background:
+              "linear-gradient(159.42deg, rgba(6, 10, 14, 0.7) 3.3%, rgba(59, 69, 80, 0.7) 48.96%, rgba(25, 37, 49, 0.7) 94.61%)",
+            willChange: "opacity",
+            transform: "translateZ(0)",
+            WebkitTransform: "translateZ(0)",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "100%",
+          }}
+        />
 
         {/* Content */}
         <div className="relative z-10 min-h-screen">
