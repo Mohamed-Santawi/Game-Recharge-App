@@ -116,6 +116,39 @@ const UserWallet = () => {
     setShowAddOrderModal(false);
   };
 
+  const renderProfileImage = () => {
+    if (currentUser.photoURL) {
+      // Check if it's an initial avatar URL
+      if (currentUser.photoURL.includes("ui-avatars.com")) {
+        return (
+          <img
+            src={currentUser.photoURL}
+            alt={currentUser.displayName}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        );
+      }
+      // Regular profile image
+      return (
+        <img
+          src={currentUser.photoURL}
+          alt={currentUser.displayName}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+      );
+    }
+    // Fallback to initial
+    const initial =
+      currentUser.displayName?.[0] || currentUser.email?.[0] || "U";
+    return (
+      <div className="w-full h-full flex items-center justify-center text-lg lg:text-2xl font-bold text-white">
+        {initial}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen relative">
       {/* Loading State - Only show on desktop */}
@@ -202,18 +235,7 @@ const UserWallet = () => {
               {/* User Profile */}
               <div className="flex items-center space-x-4 mb-4 lg:mb-6">
                 <div className="w-10 h-10 lg:w-16 lg:h-16 bg-primary/20 rounded-full flex items-center justify-center text-lg lg:text-2xl font-bold text-white overflow-hidden">
-                  {currentUser.photoURL ? (
-                    <img
-                      src={currentUser.photoURL}
-                      alt={currentUser.displayName}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    currentUser.displayName?.[0] ||
-                    currentUser.email?.[0] ||
-                    "U"
-                  )}
+                  {renderProfileImage()}
                 </div>
                 <div className="text-left">
                   <h2 className="text-base lg:text-xl font-bold text-white">

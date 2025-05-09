@@ -15,6 +15,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -82,6 +83,25 @@ const Login = () => {
     }
   };
 
+  const generateInitialAvatar = (name) => {
+    if (!name) return null;
+    const initial = name.charAt(0).toUpperCase();
+    const colors = [
+      "#60A5FA", // Blue
+      "#34D399", // Green
+      "#F87171", // Red
+      "#FBBF24", // Yellow
+      "#A78BFA", // Purple
+      "#F472B6", // Pink
+    ];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+    return {
+      initial,
+      backgroundColor: randomColor,
+    };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -101,7 +121,7 @@ const Login = () => {
           formData.password
         );
 
-        // Upload profile image if selected
+        // Upload profile image if selected, otherwise use initial avatar
         if (profileImage) {
           const storageRef = ref(
             storage,
@@ -114,8 +134,16 @@ const Login = () => {
             photoURL: downloadURL,
           });
         } else {
+          const avatar = generateInitialAvatar(formData.fullName);
+          const initialAvatarUrl = `https://ui-avatars.com/api/?name=${
+            avatar.initial
+          }&background=${avatar.backgroundColor.replace(
+            "#",
+            ""
+          )}&color=fff&size=128&bold=true`;
           await updateProfile(userCredential.user, {
             displayName: formData.fullName,
+            photoURL: initialAvatarUrl,
           });
         }
 
@@ -139,10 +167,62 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle();
+      setGoogleLoading(true);
+      setError("");
+      setSuccess("");
+
+      // Attempt Google sign in
+      const result = await signInWithGoogle();
+
+      // Check if this is a new user
+      const isNewUser = result.additionalUserInfo?.isNewUser;
+
+      if (isNewUser) {
+        // If new user and no photo URL, create initial avatar
+        if (!result.user.photoURL) {
+          const avatar = generateInitialAvatar(result.user.displayName);
+          const initialAvatarUrl = `https://ui-avatars.com/api/?name=${
+            avatar.initial
+          }&background=${avatar.backgroundColor.replace(
+            "#",
+            ""
+          )}&color=fff&size=128&bold=true`;
+          await updateProfile(result.user, {
+            photoURL: initialAvatarUrl,
+          });
+        }
+        setSuccess("Welcome! Your account has been created successfully.");
+      } else {
+        setSuccess("Welcome back!");
+      }
+
+      // Short delay to show success message
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Navigate to home
       navigate("/");
     } catch (error) {
-      setError(error.message);
+      console.error("Google sign in error:", error);
+
+      // Handle specific error cases
+      switch (error.code) {
+        case "auth/popup-closed-by-user":
+          setError("Sign in was cancelled. Please try again.");
+          break;
+        case "auth/popup-blocked":
+          setError("Pop-up was blocked. Please allow pop-ups for this site.");
+          break;
+        case "auth/cancelled-popup-request":
+          setError("Sign in was cancelled. Please try again.");
+          break;
+        case "auth/network-request-failed":
+          setError("Network error. Please check your internet connection.");
+          break;
+        default:
+          setError("Failed to sign in with Google. Please try again.");
+      }
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -336,15 +416,25 @@ const Login = () => {
             <div className="mt-6">
               <button
                 onClick={handleGoogleSignIn}
-                className="w-full flex items-center justify-center px-4 py-3 border border-white/20 rounded-lg shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 transition-all duration-300"
+                disabled={googleLoading}
+                className="w-full flex items-center justify-center px-4 py-3 border border-white/20 rounded-lg shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"
-                  />
-                </svg>
-                Sign in with Google
+                {googleLoading ? (
+                  <div className="flex items-center">
+                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2"></div>
+                    <span>Signing in...</span>
+                  </div>
+                ) : (
+                  <>
+                    <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                      <path
+                        fill="currentColor"
+                        d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"
+                      />
+                    </svg>
+                    Sign in with Google
+                  </>
+                )}
               </button>
             </div>
           </div>
