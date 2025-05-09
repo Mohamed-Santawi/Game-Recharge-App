@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import ghostImage from "../assets/ghost.webp";
-import cardImage from "../assets/card.webp";
 import { motion, AnimatePresence } from "framer-motion";
 import OrdersList from "../components/OrdersList";
 
@@ -26,8 +24,7 @@ const UserWallet = () => {
   const [activeTab, setActiveTab] = useState("orders");
   const [showAddOrderModal, setShowAddOrderModal] = useState(false);
   const [isBackButtonVisible, setIsBackButtonVisible] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [newOrder, setNewOrder] = useState({
     gameName: "",
     amount: "",
@@ -48,19 +45,6 @@ const UserWallet = () => {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    // Preload the background image
-    const img = new Image();
-    img.src = ghostImage;
-    img.onload = () => {
-      setImageLoaded(true);
-      // Add a small delay to ensure smooth transition
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
-    };
   }, []);
 
   if (!currentUser) {
@@ -202,9 +186,9 @@ const UserWallet = () => {
               <div
                 className="absolute inset-0 w-full h-full"
                 style={{
-                  backgroundImage: `url(${cardImage})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
+                  background:
+                    "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
+                  opacity: 0.9,
                 }}
               />
 
