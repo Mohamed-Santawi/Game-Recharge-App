@@ -1,6 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
 import ninjaImage from "../assets/ninja.webp";
 
@@ -43,7 +42,7 @@ const Home = () => {
     }
 
     // Failsafe timeout
-    const timeout = setTimeout(() => setIsLoading(false), 2000);
+    const timeout = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timeout);
   }, [isMobile]);
 
@@ -63,9 +62,6 @@ const Home = () => {
       navigate("/login");
     }
   };
-
-  // Conditionally render motion or regular div based on device
-  const Container = isMobile ? "div" : motion.div;
 
   return (
     <div className="min-h-screen relative">
@@ -165,11 +161,7 @@ const Home = () => {
 
         {/* Main Content - Simplified for mobile */}
         <main className="max-w-7xl mx-auto px-4 pt-8">
-          <Container
-            initial={isMobile ? {} : { opacity: 0, y: 20 }}
-            animate={isMobile ? {} : { opacity: 1, y: 0 }}
-            className="text-center"
-          >
+          <div className="text-center">
             <h1 className="text-4xl md:text-7xl font-bold text-white mb-4">
               Game Recharge
             </h1>
@@ -195,7 +187,7 @@ const Home = () => {
                 />
               </Suspense>
             )}
-          </Container>
+          </div>
         </main>
       </div>
     </div>

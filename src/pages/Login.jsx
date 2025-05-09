@@ -1,5 +1,5 @@
 import firedninjaImage from "../assets/firedninja.webp";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -9,7 +9,6 @@ import {
 } from "firebase/auth";
 import { auth, storage } from "../config/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { motion } from "framer-motion";
 
 const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -18,6 +17,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     email: "",
@@ -27,6 +28,33 @@ const Login = () => {
   });
   const { signInWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    // Optimize image loading for mobile
+    if (isMobile) {
+      // On mobile, show content immediately and load image in background
+      setIsLoading(false);
+      const img = new Image();
+      img.src = firedninjaImage;
+    } else {
+      // On desktop, wait for image to load
+      const img = new Image();
+      img.onload = () => setIsLoading(false);
+      img.src = firedninjaImage;
+    }
+
+    // Failsafe timeout
+    const timeout = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timeout);
+  }, [isMobile]);
 
   const handleChange = (e) => {
     setFormData({
@@ -54,154 +82,47 @@ const Login = () => {
     }
   };
 
-  const getErrorMessage = (error) => {
-    switch (error.code) {
-      case "auth/weak-password":
-        return "Please use a stronger password (at least 6 characters)";
-      case "auth/email-already-in-use":
-        return "This email is already registered. Please try logging in instead.";
-      case "auth/invalid-email":
-        return "Please enter a valid email address";
-      case "auth/user-not-found":
-        return "No account found with this email. Please sign up first.";
-      case "auth/wrong-password":
-        return "Incorrect password. Please try again.";
-      case "auth/too-many-requests":
-        return "Too many failed attempts. Please try again later.";
-      case "auth/invalid-credential":
-        return "Invalid email or password. Please check your credentials.";
-      case "auth/user-disabled":
-        return "This account has been disabled. Please contact support.";
-      case "auth/operation-not-allowed":
-        return "Email/password accounts are not enabled. Please contact support.";
-      case "auth/network-request-failed":
-        return "Network error. Please check your internet connection.";
-      default:
-        console.error("Auth error:", error);
-        return "An error occurred during sign in. Please try again.";
-    }
-  };
-
-  const uploadProfileImage = async (userId, imageFile) => {
-    try {
-      // Check file size (limit to 1MB for free tier)
-      if (imageFile.size > 1024 * 1024) {
-        throw new Error("Image size should be less than 1MB");
-      }
-
-      // Create a unique filename
-      const timestamp = Date.now();
-      const filename = `${userId}_${timestamp}`;
-      const storageRef = ref(
-        storage,
-        `gs://game-recharge-store.firebasestorage.app/profileImages/${filename}`
-      );
-
-      // Set metadata
-      const metadata = {
-        contentType: imageFile.type,
-        customMetadata: {
-          uploadedBy: userId,
-          uploadedAt: timestamp.toString(),
-        },
-      };
-
-      // Upload with retry logic
-      let retryCount = 0;
-      const maxRetries = 2;
-
-      while (retryCount < maxRetries) {
-        try {
-          const snapshot = await uploadBytes(storageRef, imageFile, metadata);
-          const downloadURL = await getDownloadURL(snapshot.ref);
-          return downloadURL;
-        } catch (error) {
-          console.error("Upload attempt failed:", error);
-          retryCount++;
-          if (retryCount === maxRetries) {
-            throw error;
-          }
-          // Wait before retrying
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      }
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      if (error.message.includes("1MB")) {
-        throw new Error(
-          "Image size should be less than 1MB. Please choose a smaller image."
-        );
-      } else if (error.code === "storage/unauthorized") {
-        throw new Error(
-          "You don't have permission to upload images. Please try again."
-        );
-      } else {
-        throw new Error("Failed to upload profile image. Please try again.");
-      }
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
     setLoading(true);
 
-    if (isSignUp && formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
-
     try {
       if (isSignUp) {
-        // Create user first
+        // Sign Up
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error("Passwords do not match");
+        }
+
         const userCredential = await createUserWithEmailAndPassword(
           auth,
           formData.email,
           formData.password
         );
 
-        let photoURL = null;
-
         // Upload profile image if selected
         if (profileImage) {
-          try {
-            photoURL = await uploadProfileImage(
-              userCredential.user.uid,
-              profileImage
-            );
-          } catch (uploadError) {
-            console.error("Image upload failed:", uploadError);
-            // Continue with signup even if image upload fails
-            setError(
-              "Account created, but image upload failed. You can update your profile picture later."
-            );
-          }
+          const storageRef = ref(
+            storage,
+            `profileImages/${userCredential.user.uid}`
+          );
+          await uploadBytes(storageRef, profileImage);
+          const downloadURL = await getDownloadURL(storageRef);
+          await updateProfile(userCredential.user, {
+            displayName: formData.fullName,
+            photoURL: downloadURL,
+          });
         } else {
-          // If no image uploaded, create a text-based avatar URL
-          const firstLetter = formData.fullName.charAt(0).toUpperCase();
-          photoURL = `https://ui-avatars.com/api/?name=${firstLetter}&background=random&color=fff&size=128`;
+          await updateProfile(userCredential.user, {
+            displayName: formData.fullName,
+          });
         }
 
-        // Update user profile
-        await updateProfile(userCredential.user, {
-          displayName: formData.fullName,
-          photoURL: photoURL,
-        });
-
-        setSuccess("Account created successfully! Redirecting...");
-        setTimeout(() => {
-          navigate("/");
-        }, 2000);
+        setSuccess("Account created successfully!");
+        navigate("/");
       } else {
-        // Sign in
-        if (!formData.email || !formData.password) {
-          setError("Please enter both email and password");
-          setLoading(false);
-          return;
-        }
-
+        // Sign In
         await signInWithEmailAndPassword(
           auth,
           formData.email,
@@ -210,8 +131,7 @@ const Login = () => {
         navigate("/");
       }
     } catch (error) {
-      console.error("Auth error:", error);
-      setError(getErrorMessage(error));
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -222,13 +142,20 @@ const Login = () => {
       await signInWithGoogle();
       navigate("/");
     } catch (error) {
-      setError("Failed to sign in with Google. Please try again.");
+      setError(error.message);
     }
   };
 
   return (
     <div className="min-h-screen relative">
-      {/* Full Screen Background */}
+      {/* Loading State - Only show on desktop */}
+      {!isMobile && isLoading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a0a] z-50">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+
+      {/* Background - Optimized for mobile */}
       <div
         className="fixed inset-0 w-full h-full"
         style={{
@@ -236,11 +163,18 @@ const Login = () => {
           backgroundSize: "100% 100%",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          backgroundAttachment: "fixed",
           backgroundColor: "#0a0a0a",
-          objectFit: "cover",
           width: "100vw",
           height: "100vh",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          ...(isMobile && {
+            willChange: "auto",
+            transform: "none",
+          }),
         }}
       />
 
@@ -255,17 +189,8 @@ const Login = () => {
 
       {/* Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-md w-full space-y-8 p-8 bg-white/10 backdrop-blur-lg rounded-lg shadow-lg border border-white/20"
-        >
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
+        <div className="max-w-md w-full space-y-8 p-8 bg-white/10 backdrop-blur-lg rounded-lg shadow-lg border border-white/20">
+          <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
               {isSignUp ? "Create your account" : "Welcome Back"}
             </h2>
@@ -278,52 +203,32 @@ const Login = () => {
                 {isSignUp ? "Sign in" : "Sign up"}
               </button>
             </p>
-          </motion.div>
+          </div>
 
           {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg"
-              role="alert"
-            >
+            <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg">
               <span className="block sm:inline">{error}</span>
-            </motion.div>
+            </div>
           )}
 
           {success && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-green-500/20 border border-green-500/50 text-green-200 px-4 py-3 rounded-lg"
-              role="alert"
-            >
+            <div className="bg-green-500/20 border border-green-500/50 text-green-200 px-4 py-3 rounded-lg">
               <span className="block sm:inline">{success}</span>
-            </motion.div>
+            </div>
           )}
 
-          <motion.form
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mt-8 space-y-6"
-            onSubmit={handleSubmit}
-          >
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="rounded-md shadow-sm space-y-4">
               {isSignUp && (
                 <>
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: 0.5 }}
-                    className="flex flex-col items-center space-y-4"
-                  >
+                  <div className="flex flex-col items-center space-y-4">
                     <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-white/20">
                       {imagePreview ? (
                         <img
                           src={imagePreview}
                           alt="Profile preview"
                           className="w-full h-full object-cover"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full bg-white/5 flex items-center justify-center">
@@ -338,22 +243,16 @@ const Login = () => {
                       ref={fileInputRef}
                       className="hidden"
                     />
-                    <motion.button
+                    <button
                       type="button"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
                       onClick={() => fileInputRef.current?.click()}
                       className="px-4 py-2 text-sm text-white bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
                     >
                       {imagePreview ? "Change Image" : "Upload Image"}
-                    </motion.button>
-                  </motion.div>
+                    </button>
+                  </div>
 
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: 0.5 }}
-                  >
+                  <div>
                     <input
                       id="fullName"
                       name="fullName"
@@ -364,14 +263,10 @@ const Login = () => {
                       value={formData.fullName}
                       onChange={handleChange}
                     />
-                  </motion.div>
+                  </div>
                 </>
               )}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: 0.6 }}
-              >
+              <div>
                 <input
                   id="email"
                   name="email"
@@ -382,12 +277,8 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                 />
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.4, delay: 0.7 }}
-              >
+              </div>
+              <div>
                 <input
                   id="password"
                   name="password"
@@ -398,13 +289,9 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                 />
-              </motion.div>
+              </div>
               {isSignUp && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.8 }}
-                >
+                <div>
                   <input
                     id="confirmPassword"
                     name="confirmPassword"
@@ -415,19 +302,13 @@ const Login = () => {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                   />
-                </motion.div>
+                </div>
               )}
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.9 }}
-            >
-              <motion.button
+            <div>
+              <button
                 type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
                 disabled={loading}
                 className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#60A5FA] hover:bg-[#60A5FA]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#60A5FA] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -436,16 +317,11 @@ const Login = () => {
                   : isSignUp
                   ? "Create Account"
                   : "Sign In"}
-              </motion.button>
-            </motion.div>
-          </motion.form>
+              </button>
+            </div>
+          </form>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 1 }}
-            className="mt-6"
-          >
+          <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/20"></div>
@@ -457,16 +333,9 @@ const Login = () => {
               </div>
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 1.1 }}
-              className="mt-6"
-            >
-              <motion.button
+            <div className="mt-6">
+              <button
                 onClick={handleGoogleSignIn}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
                 className="w-full flex items-center justify-center px-4 py-3 border border-white/20 rounded-lg shadow-sm text-sm font-medium text-white bg-white/5 hover:bg-white/10 transition-all duration-300"
               >
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
@@ -476,10 +345,10 @@ const Login = () => {
                   />
                 </svg>
                 Sign in with Google
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        </motion.div>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
