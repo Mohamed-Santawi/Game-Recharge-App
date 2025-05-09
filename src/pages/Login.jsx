@@ -171,30 +171,24 @@ const Login = () => {
       setError("");
       setSuccess("");
 
-      // Attempt Google sign in
+      // Attempt Google sign in with mobile detection
       const result = await signInWithGoogle();
 
-      // Check if this is a new user
-      const isNewUser = result.additionalUserInfo?.isNewUser;
+      // Always create initial avatar for Google sign in
+      const avatar = generateInitialAvatar(result.user.displayName);
+      const initialAvatarUrl = `https://ui-avatars.com/api/?name=${
+        avatar.initial
+      }&background=${avatar.backgroundColor.replace(
+        "#",
+        ""
+      )}&color=fff&size=128&bold=true`;
 
-      if (isNewUser) {
-        // If new user and no photo URL, create initial avatar
-        if (!result.user.photoURL) {
-          const avatar = generateInitialAvatar(result.user.displayName);
-          const initialAvatarUrl = `https://ui-avatars.com/api/?name=${
-            avatar.initial
-          }&background=${avatar.backgroundColor.replace(
-            "#",
-            ""
-          )}&color=fff&size=128&bold=true`;
-          await updateProfile(result.user, {
-            photoURL: initialAvatarUrl,
-          });
-        }
-        setSuccess("Welcome! Your account has been created successfully.");
-      } else {
-        setSuccess("Welcome back!");
-      }
+      // Update profile with initial avatar
+      await updateProfile(result.user, {
+        photoURL: initialAvatarUrl,
+      });
+
+      setSuccess("Welcome! Your account has been created successfully.");
 
       // Short delay to show success message
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -204,22 +198,49 @@ const Login = () => {
     } catch (error) {
       console.error("Google sign in error:", error);
 
-      // Handle specific error cases
+      // Enhanced error handling for mobile
       switch (error.code) {
         case "auth/popup-closed-by-user":
           setError("Sign in was cancelled. Please try again.");
           break;
         case "auth/popup-blocked":
-          setError("Pop-up was blocked. Please allow pop-ups for this site.");
+          setError(
+            "Please allow pop-ups for this site or try using a different browser."
+          );
           break;
         case "auth/cancelled-popup-request":
           setError("Sign in was cancelled. Please try again.");
           break;
         case "auth/network-request-failed":
-          setError("Network error. Please check your internet connection.");
+          setError(
+            "Network error. Please check your internet connection and try again."
+          );
+          break;
+        case "auth/operation-not-supported-in-this-environment":
+          setError(
+            "This browser doesn't support Google sign in. Please try a different browser."
+          );
+          break;
+        case "auth/unauthorized-domain":
+          setError(
+            "This domain is not authorized for Google sign in. Please contact support."
+          );
+          break;
+        case "auth/web-storage-unsupported":
+          setError(
+            "Your browser doesn't support required features. Please try a different browser."
+          );
           break;
         default:
-          setError("Failed to sign in with Google. Please try again.");
+          if (error.message.includes("popup")) {
+            setError(
+              "Unable to open sign in window. Please try using a different browser or device."
+            );
+          } else {
+            setError(
+              "Failed to sign in with Google. Please try again or use email sign in."
+            );
+          }
       }
     } finally {
       setGoogleLoading(false);

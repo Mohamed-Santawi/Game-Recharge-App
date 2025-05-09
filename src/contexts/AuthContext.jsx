@@ -6,6 +6,7 @@ import {
   signOut,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithRedirect,
 } from "firebase/auth";
 import {
   getDoc,
@@ -23,7 +24,7 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cashBackRate, setCashBackRate] = useState(2.5);
@@ -71,10 +72,32 @@ export function AuthProvider({ children }) {
   const [customerProfit, setCustomerProfit] = useState(10); // Default 10% profit for customer
   const [isAdmin, setIsAdmin] = useState(false);
 
-  function signInWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    return signInWithPopup(auth, provider);
-  }
+  const signInWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+
+      // Add custom parameters for better mobile handling
+      provider.setCustomParameters({
+        prompt: "select_account",
+        // Force account selection even if one account is available
+        // This helps prevent issues on mobile devices
+      });
+
+      // Use signInWithRedirect for mobile devices
+      if (window.innerWidth <= 768) {
+        await signInWithRedirect(auth, provider);
+        // The redirect will handle the rest
+        return;
+      }
+
+      // Use signInWithPopup for desktop
+      const result = await signInWithPopup(auth, provider);
+      return result;
+    } catch (error) {
+      console.error("Google sign in error:", error);
+      throw error;
+    }
+  };
 
   function logout() {
     return signOut(auth);
@@ -423,4 +446,4 @@ export function AuthProvider({ children }) {
       {!loading && children}
     </AuthContext.Provider>
   );
-}
+};
