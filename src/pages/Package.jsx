@@ -17,7 +17,7 @@ const Package = () => {
   const [showRestrictedPopup, setShowRestrictedPopup] = useState(false);
   const [cart, setCart] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showCartModal, setShowCartModal] = useState(false);
   const [showCartAnimation, setShowCartAnimation] = useState(false);
 
   const {
@@ -25,12 +25,14 @@ const Package = () => {
     addToCart,
     removeFromCart,
     handleBuyNow,
-    showCheckoutModal: cartShowCheckoutModal,
-    setShowCheckoutModal: setCartShowCheckoutModal,
+    showCheckoutModal,
+    setShowCheckoutModal,
     handleCheckout,
     handleContinueShopping,
     handleAddAndCheckout,
     handleCartClick,
+    pendingItem,
+    setPendingItem,
   } = useCart();
 
   // Available packages with diamond classifications
@@ -143,7 +145,7 @@ const Package = () => {
   };
 
   const handlePaymentCheckout = () => {
-    setShowCheckoutModal(false);
+    setShowCartModal(false);
     navigate("/payment", {
       state: {
         cart: cartItems,
@@ -181,7 +183,7 @@ const Package = () => {
             </Link>
             <div className="relative">
               <button
-                onClick={() => setShowCheckoutModal(true)}
+                onClick={() => setShowCartModal(true)}
                 className="relative inline-flex gap-4 items-center justify-center px-6 py-3 overflow-hidden font-medium text-white transition-all duration-300 ease-out rounded-lg shadow-lg group bg-[#121A22]/40 border border-[#EEAD22]/20 hover:bg-[#121A22]/60 hover:shadow-[#EEAD22]/20"
               >
                 <img src={cartIcon} alt="Cart" className="w-6 h-6 mr-2" />
@@ -356,7 +358,7 @@ const Package = () => {
         </div>
 
         {/* Cart Modal */}
-        {showCheckoutModal && (
+        {showCartModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
             <div className="bg-[#121A22] p-6 rounded-lg max-w-lg w-full mx-4 backdrop-blur-lg border border-[#EEAD22]/20">
               <h3 className="text-2xl font-bold mb-4 text-[#EEAD22]">
@@ -364,10 +366,10 @@ const Package = () => {
               </h3>
               <div className="mb-6 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                 {cartItems.length === 0 ? (
-                  <div className="text-center ">
+                  <div className="text-center">
                     <p className="text-gray-400 mb-8">Your cart is empty</p>
                     <button
-                      onClick={() => setShowCheckoutModal(false)}
+                      onClick={() => setShowCartModal(false)}
                       className="bg-[#EEAD22] hover:bg-[#EEAD22]/90 text-white px-24 py-2 rounded-lg transition-colors"
                     >
                       Close
@@ -409,7 +411,7 @@ const Package = () => {
                   </p>
                   <div className="flex space-x-3">
                     <button
-                      onClick={() => setShowCheckoutModal(false)}
+                      onClick={() => setShowCartModal(false)}
                       className="flex-1 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors"
                     >
                       Continue Shopping
@@ -426,6 +428,46 @@ const Package = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Buy Now Modal */}
+        {showCheckoutModal && pendingItem && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
+            <div className="bg-[#121A22] p-6 rounded-lg max-w-md w-full mx-4 backdrop-blur-lg border border-[#EEAD22]/20">
+              <h3 className="text-[#F9D94D] text-xl font-bold mb-4">
+                Would you like to:
+              </h3>
+              <div className="flex flex-col space-y-3">
+                <button
+                  onClick={handleCheckout}
+                  className="w-full bg-[#302F3C] text-white py-2 rounded-lg hover:bg-[#302F3C]/80"
+                >
+                  Clear Cart & Checkout with Selected Package
+                </button>
+                <button
+                  onClick={handleContinueShopping}
+                  className="w-full bg-[#F9D94D] text-[#07080A] py-2 rounded-lg hover:bg-[#F9D94D]/80"
+                >
+                  Add to Cart & Continue Shopping
+                </button>
+                <button
+                  onClick={handleAddAndCheckout}
+                  className="w-full bg-[#302F3C] text-white py-2 rounded-lg hover:bg-[#302F3C]/80"
+                >
+                  Add to Cart & Proceed to Checkout
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCheckoutModal(false);
+                    setPendingItem(null);
+                  }}
+                  className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}
