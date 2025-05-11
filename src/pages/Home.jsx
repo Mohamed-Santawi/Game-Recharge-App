@@ -109,7 +109,7 @@ const Home = () => {
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={handleWalletClick}
-                    className="px-4 py-2 text-white bg-[#121A22]/40 rounded-lg border border-white/5 hover:bg-[#121A22]/60"
+                    className="relative inline-flex items-center justify-center px-8 py-3 overflow-hidden font-medium text-white transition-all duration-300 ease-out rounded-lg shadow-lg group bg-[#121A22]/40 border border-white/5 hover:bg-[#121A22]/60 hover:shadow-primary/20 before:absolute before:bottom-0 before:left-0 before:w-full before:h-0.5 before:bg-white/10 before:transition-all before:duration-300 hover:before:bg-primary/80"
                   >
                     <span className="mr-2">💰</span>
                     Wallet
@@ -162,6 +162,17 @@ const Home = () => {
             <h1 className="text-4xl md:text-7xl font-bold text-white mb-4">
               Game Recharge
             </h1>
+
+            {/* Add Package Link Button */}
+            <div className="mb-8">
+              <Link
+                to="/package"
+                className="inline-flex items-center justify-center px-8 py-4 text-xl font-bold text-white bg-primary hover:bg-primary/90 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-primary/20"
+              >
+                <span className="mr-2">💎</span>
+                Get Game Packages
+              </Link>
+            </div>
 
             {/* Lazy Loaded Content with instant mobile loading */}
             {isMobile ? (

@@ -49,7 +49,7 @@ const Order = ({ order }) => {
                   "linear-gradient(147.43deg, rgba(255, 255, 255, 0.48) 5.2%, rgba(59, 69, 80, 0.48) 65.03%, rgba(255, 255, 255, 0.48) 124.85%)",
               }}
             >
-              #{order.id}
+              {order.id}
             </span>
             <h3 className="text-sm font-medium text-white">{order.gameName}</h3>
           </div>

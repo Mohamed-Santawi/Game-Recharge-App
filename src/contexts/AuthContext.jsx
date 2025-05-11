@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
   const [todaySpending, setTodaySpending] = useState(0);
   const [orders, setOrders] = useState([
     {
-      id: "3688",
+      id: "3688 💎",
       gameName: "PUBG Mobile",
       price: 29.99,
       cashBack: 0.75,
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
       date: new Date().toISOString(),
     },
     {
-      id: "566",
+      id: "566 💎",
       gameName: "Free Fire",
       price: 19.99,
       cashBack: 0.5,
@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
       date: new Date().toISOString(),
     },
     {
-      id: "424",
+      id: "424 💎",
       gameName: "Mobile Legends",
       price: 49.99,
       cashBack: 1.25,
