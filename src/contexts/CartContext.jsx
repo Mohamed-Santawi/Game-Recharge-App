@@ -51,15 +51,11 @@ export const CartProvider = ({ children }) => {
     setCartItems((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  const updateQuantity = (itemId, change) => {
+  const updateCartItemQuantity = (itemId, newQuantity) => {
     setCartItems((prev) =>
-      prev.map((item) => {
-        if (item.id === itemId) {
-          const newQuantity = Math.max(1, (item.quantity || 1) + change);
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      })
+      prev.map((item) =>
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
+      )
     );
   };
 
@@ -112,7 +108,7 @@ export const CartProvider = ({ children }) => {
     cartItems,
     addToCart,
     removeFromCart,
-    updateQuantity,
+    updateCartItemQuantity,
     clearCart,
     handleBuyNow,
     showCheckoutModal,
