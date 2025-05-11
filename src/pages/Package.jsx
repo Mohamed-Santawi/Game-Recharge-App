@@ -364,13 +364,19 @@ const Package = () => {
               </h3>
               <div className="mb-6 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                 {cartItems.length === 0 ? (
-                  <p className="text-gray-400 text-center py-4">
-                    Your cart is empty
-                  </p>
+                  <div className="text-center ">
+                    <p className="text-gray-400 mb-8">Your cart is empty</p>
+                    <button
+                      onClick={() => setShowCheckoutModal(false)}
+                      className="bg-[#EEAD22] hover:bg-[#EEAD22]/90 text-white px-24 py-2 rounded-lg transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
                 ) : (
-                  cartItems.map((item, index) => (
+                  cartItems.map((item) => (
                     <div
-                      key={index}
+                      key={item.id}
                       className="mb-4 px-6 py-2 bg-white/5 rounded-lg flex justify-between items-center"
                     >
                       <div className="flex flex-col gap-1">
@@ -381,7 +387,7 @@ const Package = () => {
                         <p className="text-[#EEAD22]">${item.price}</p>
                       </div>
                       <button
-                        onClick={() => removeFromCart(index)}
+                        onClick={() => removeFromCart(item.id)}
                         className="text-red-400 hover:text-red-300 transition-colors"
                       >
                         Remove

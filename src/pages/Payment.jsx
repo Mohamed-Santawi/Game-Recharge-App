@@ -6,6 +6,17 @@ import { useCart } from "../contexts/CartContext";
 import paymentBg from "../assets/payment.webp";
 import cartIcon from "../assets/cart.png";
 
+// Add font preload
+const fontPreload = () => {
+  const link = document.createElement("link");
+  link.rel = "preload";
+  link.as = "font";
+  link.href =
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
+  link.crossOrigin = "anonymous";
+  document.head.appendChild(link);
+};
+
 const Payment = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -16,6 +27,11 @@ const Payment = () => {
   const [expiryDate, setExpiryDate] = useState("");
   const [cvv, setCvv] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Preload fonts on component mount
+  useEffect(() => {
+    fontPreload();
+  }, []);
 
   // Get cart items from location state or context
   const items = location.state?.cart || cartItems;
@@ -69,7 +85,7 @@ const Payment = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden">
+    <div className="min-h-screen relative overflow-x-hidden font-sans antialiased">
       {/* Background with enhanced gradient */}
       <div
         className="fixed inset-0"
