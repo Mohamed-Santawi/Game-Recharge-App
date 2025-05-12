@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import paymentBg from "../assets/payment.webp";
 import cartIcon from "../assets/cart.png";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
 // Add font preload
 const fontPreload = () => {
@@ -17,16 +18,29 @@ const fontPreload = () => {
   document.head.appendChild(link);
 };
 
+// PayPal configuration
+const initialOptions = {
+  clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "test",
+  currency: "USD",
+  intent: "capture",
+  components: "buttons",
+  "enable-funding": "card",
+  "disable-funding": "paylater,venmo",
+  "data-sdk-integration-source": "button-factory",
+};
+
 const Payment = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, signOut } = useAuth();
   const { cartItems, clearCart, updateCartItemQuantity } = useCart();
-  const [paymentMethod, setPaymentMethod] = useState("credit_card");
+  const [paymentMethod, setPaymentMethod] = useState("direct_card");
   const [cardNumber, setCardNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [cvv, setCvv] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPayPalButtons, setShowPayPalButtons] = useState(false);
+  const [paypalError, setPaypalError] = useState(null);
 
   // Preload fonts on component mount
   useEffect(() => {
@@ -62,19 +76,14 @@ const Payment = () => {
     updateCartItemQuantity(itemId, newQuantity);
   };
 
-  const handleSubmit = async (e) => {
+  const handleDirectCardPayment = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
 
     try {
-      // Here you would typically integrate with a payment processor
-      // For now, we'll just simulate a successful payment
+      // Here you would integrate with your payment processor
       await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Clear the cart after successful payment
       clearCart();
-
-      // Show success message and redirect
       alert("Payment successful!");
       navigate("/");
     } catch (error) {
@@ -82,6 +91,32 @@ const Payment = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handlePayPalSuccess = (data, actions) => {
+    return actions.order.capture().then(function (details) {
+      clearCart();
+      alert("Payment completed by " + details.payer.name.given_name);
+      navigate("/");
+    });
+  };
+
+  const handlePayPalError = (err) => {
+    setPaypalError(err);
+    alert("PayPal payment failed. Please try again.");
+    console.error("PayPal Error:", err);
+  };
+
+  const createPayPalOrder = (data, actions) => {
+    return actions.order.create({
+      purchase_units: [
+        {
+          amount: {
+            value: (calculateTotal() + calculateTotal() * 0.3).toFixed(2),
+          },
+        },
+      ],
+    });
   };
 
   return (
@@ -270,75 +305,109 @@ const Payment = () => {
               <h2 className="text-xl sm:text-2xl font-bold text-[#F9D94D] mb-4 sm:mb-6 text-center">
                 Payment Details
               </h2>
-              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              <form
+                onSubmit={handleDirectCardPayment}
+                className="space-y-4 sm:space-y-6"
+              >
                 <div>
                   <label className="block text-white mb-2 text-base sm:text-lg font-medium">
                     Payment Method
                   </label>
                   <select
                     value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    onChange={(e) => {
+                      setPaymentMethod(e.target.value);
+                      setShowPayPalButtons(e.target.value === "paypal");
+                    }}
                     className="w-full bg-[#302F3C]/80 backdrop-blur-sm text-white rounded-lg px-3 sm:px-4 py-2 sm:py-3 focus:outline-none focus:ring-2 focus:ring-[#F9D94D] border border-[#F9D94D]/20 transition-all duration-300 text-sm sm:text-base"
                   >
-                    <option value="credit_card">Credit Card</option>
-                    <option value="debit_card">Debit Card</option>
+                    <option value="direct_card">Direct Card Payment</option>
+                    <option value="paypal">PayPal</option>
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-white mb-2 text-base sm:text-lg font-medium">
-                    Card Number
-                  </label>
-                  <input
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    placeholder="1234 5678 9012 3456"
-                    className="w-full bg-[#302F3C]/80 backdrop-blur-sm text-white rounded-lg px-3 sm:px-4 py-2 sm:py-3 focus:outline-none focus:ring-2 focus:ring-[#F9D94D] border border-[#F9D94D]/20 transition-all duration-300 text-sm sm:text-base"
-                    required
-                  />
-                </div>
+                {paymentMethod === "direct_card" ? (
+                  <>
+                    <div>
+                      <label className="block text-white mb-2 text-base sm:text-lg font-medium">
+                        Card Number
+                      </label>
+                      <input
+                        type="text"
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value)}
+                        placeholder="1234 5678 9012 3456"
+                        className="w-full bg-[#302F3C]/80 backdrop-blur-sm text-white rounded-lg px-3 sm:px-4 py-2 sm:py-3 focus:outline-none focus:ring-2 focus:ring-[#F9D94D] border border-[#F9D94D]/20 transition-all duration-300 text-sm sm:text-base"
+                        required
+                      />
+                    </div>
 
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div>
-                    <label className="block text-white mb-2 text-base sm:text-lg font-medium">
-                      Expiry Date
-                    </label>
-                    <input
-                      type="text"
-                      value={expiryDate}
-                      onChange={(e) => setExpiryDate(e.target.value)}
-                      placeholder="MM/YY"
-                      className="w-full bg-[#302F3C]/80 backdrop-blur-sm text-white rounded-lg px-3 sm:px-4 py-2 sm:py-3 focus:outline-none focus:ring-2 focus:ring-[#F9D94D] border border-[#F9D94D]/20 transition-all duration-300 text-sm sm:text-base"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-white mb-2 text-base sm:text-lg font-medium">
-                      CVV
-                    </label>
-                    <input
-                      type="text"
-                      value={cvv}
-                      onChange={(e) => setCvv(e.target.value)}
-                      placeholder="123"
-                      className="w-full bg-[#302F3C]/80 backdrop-blur-sm text-white rounded-lg px-3 sm:px-4 py-2 sm:py-3 focus:outline-none focus:ring-2 focus:ring-[#F9D94D] border border-[#F9D94D]/20 transition-all duration-300 text-sm sm:text-base"
-                      required
-                    />
-                  </div>
-                </div>
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                      <div>
+                        <label className="block text-white mb-2 text-base sm:text-lg font-medium">
+                          Expiry Date
+                        </label>
+                        <input
+                          type="text"
+                          value={expiryDate}
+                          onChange={(e) => setExpiryDate(e.target.value)}
+                          placeholder="MM/YY"
+                          className="w-full bg-[#302F3C]/80 backdrop-blur-sm text-white rounded-lg px-3 sm:px-4 py-2 sm:py-3 focus:outline-none focus:ring-2 focus:ring-[#F9D94D] border border-[#F9D94D]/20 transition-all duration-300 text-sm sm:text-base"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-white mb-2 text-base sm:text-lg font-medium">
+                          CVV
+                        </label>
+                        <input
+                          type="text"
+                          value={cvv}
+                          onChange={(e) => setCvv(e.target.value)}
+                          placeholder="123"
+                          className="w-full bg-[#302F3C]/80 backdrop-blur-sm text-white rounded-lg px-3 sm:px-4 py-2 sm:py-3 focus:outline-none focus:ring-2 focus:ring-[#F9D94D] border border-[#F9D94D]/20 transition-all duration-300 text-sm sm:text-base"
+                          required
+                        />
+                      </div>
+                    </div>
 
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className={`w-full bg-[#F9D94D] text-[#07080A] font-bold py-3 sm:py-4 rounded-lg transition-all duration-300 text-base sm:text-lg ${
-                    isProcessing
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:bg-[#F9D94D]/80 hover:shadow-lg hover:shadow-[#F9D94D]/20"
-                  }`}
-                >
-                  {isProcessing ? "Processing..." : "Pay Now"}
-                </button>
+                    <button
+                      type="submit"
+                      disabled={isProcessing}
+                      className={`w-full bg-[#F9D94D] text-[#07080A] font-bold py-3 sm:py-4 rounded-lg transition-all duration-300 text-base sm:text-lg ${
+                        isProcessing
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:bg-[#F9D94D]/80 hover:shadow-lg hover:shadow-[#F9D94D]/20"
+                      }`}
+                    >
+                      {isProcessing ? "Processing..." : "Pay Now"}
+                    </button>
+                  </>
+                ) : (
+                  <div className="mt-4">
+                    {paypalError ? (
+                      <div className="text-red-500 text-center mb-4">
+                        Failed to load PayPal. Please try again or use direct
+                        card payment.
+                      </div>
+                    ) : (
+                      <PayPalScriptProvider options={initialOptions}>
+                        <PayPalButtons
+                          style={{
+                            layout: "vertical",
+                            color: "gold",
+                            shape: "rect",
+                            label: "pay",
+                          }}
+                          createOrder={createPayPalOrder}
+                          onApprove={handlePayPalSuccess}
+                          onError={handlePayPalError}
+                          forceReRender={[paymentMethod]}
+                        />
+                      </PayPalScriptProvider>
+                    )}
+                  </div>
+                )}
               </form>
             </div>
           </div>
