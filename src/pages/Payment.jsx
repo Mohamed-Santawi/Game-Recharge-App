@@ -3,6 +3,8 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
+import { MdDeleteForever } from "react-icons/md";
+import { FaPlus, FaMinus } from "react-icons/fa";
 import paymentBg from "../assets/payment.webp";
 import cartIcon from "../assets/cart.png";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
@@ -33,7 +35,8 @@ const Payment = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, signOut } = useAuth();
-  const { cartItems, clearCart, updateCartItemQuantity } = useCart();
+  const { cartItems, clearCart, updateCartItemQuantity, removeFromCart } =
+    useCart();
   const [paymentMethod, setPaymentMethod] = useState("direct_card");
   const [cardNumber, setCardNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
@@ -41,14 +44,39 @@ const Payment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPayPalButtons, setShowPayPalButtons] = useState(false);
   const [paypalError, setPaypalError] = useState(null);
+  const [localItems, setLocalItems] = useState(
+    location.state?.cart || cartItems
+  );
+  const [orderTotal, setOrderTotal] = useState(0);
+  const [taxAmount, setTaxAmount] = useState(0);
+  const [finalTotal, setFinalTotal] = useState(0);
 
   // Preload fonts on component mount
   useEffect(() => {
     fontPreload();
   }, []);
 
+  // Update localItems when cartItems changes
+  useEffect(() => {
+    if (cartItems) {
+      setLocalItems(cartItems);
+    }
+  }, [cartItems]);
+
+  // Update totals whenever localItems changes
+  useEffect(() => {
+    const total = localItems.reduce(
+      (sum, item) => sum + item.price * (item.quantity || 1),
+      0
+    );
+    const tax = total * 0.3;
+    setOrderTotal(total);
+    setTaxAmount(tax);
+    setFinalTotal(total + tax);
+  }, [localItems]);
+
   // Get cart items from location state or context
-  const items = location.state?.cart || cartItems;
+  const items = localItems;
   const username =
     currentUser?.displayName?.split(" ")[0] ||
     currentUser?.email?.split("@")[0] ||
@@ -56,24 +84,44 @@ const Payment = () => {
 
   // If no items in cart and no items in location state, redirect to home
   useEffect(() => {
-    if (!items || items.length === 0) {
+    if (!localItems || localItems.length === 0) {
       navigate("/");
     }
-  }, [items, navigate]);
-
-  const calculateTotal = () => {
-    return items.reduce(
-      (total, item) => total + item.price * (item.quantity || 1),
-      0
-    );
-  };
+  }, [localItems, navigate]);
 
   const handleQuantityChange = (itemId, change) => {
-    const item = items.find((item) => item.id === itemId);
+    const item = localItems.find((item) => item.id === itemId);
     if (!item) return;
 
     const newQuantity = Math.max(1, (item.quantity || 1) + change);
     updateCartItemQuantity(itemId, newQuantity);
+
+    // Update local items
+    setLocalItems((prevItems) =>
+      prevItems.map((i) =>
+        i.id === itemId ? { ...i, quantity: newQuantity } : i
+      )
+    );
+  };
+
+  const handleRemoveItem = (itemId) => {
+    if (
+      window.confirm(
+        "Are you sure you want to remove this item from your order?"
+      )
+    ) {
+      // First update local state
+      const updatedItems = localItems.filter((item) => item.id !== itemId);
+      setLocalItems(updatedItems);
+
+      // Then update cart context
+      removeFromCart(itemId);
+
+      // If no items left, redirect to home
+      if (updatedItems.length === 0) {
+        navigate("/");
+      }
+    }
   };
 
   const handleDirectCardPayment = async (e) => {
@@ -112,7 +160,7 @@ const Payment = () => {
       purchase_units: [
         {
           amount: {
-            value: (calculateTotal() + calculateTotal() * 0.3).toFixed(2),
+            value: (finalTotal + finalTotal * 0.3).toFixed(2),
           },
         },
       ],
@@ -202,79 +250,180 @@ const Payment = () => {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="flex w-[95%] items-center justify-center sm:w-[640px] mx-auto"
+                className="flex w-[95%] items-center justify-center sm:w-[600px] md:w-[600px] mx-auto relative"
               >
                 {/* Main Order Box */}
                 <div
-                  className="w-[75%] sm:w-[446.73px] h-[104px] rounded-l-lg p-4"
+                  className="w-full h-auto rounded-lg p-4 sm:p-6 relative"
                   style={{
                     background:
-                      "linear-gradient(152.13deg, #060A0E -19.62%, #577166 36.86%, #192531 93.34%)",
+                      "linear-gradient(152.13deg, #060A0E -19.62%, #577166 36.86%, #192531 93.34%, #577166 124.85%)",
                     boxShadow: "0px 13px 19px 0px #00000026",
-                    marginLeft: "-24px",
                   }}
                 >
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-white text-sm sm:text-base">
-                        Order Status: Pending
-                      </span>
-                      <span className="text-white text-sm sm:text-base">
-                        {username}
-                      </span>
-                      {currentUser?.photoURL && (
-                        <img
-                          src={currentUser.photoURL}
-                          alt="Profile"
-                          className="w-6 h-6 sm:w-8 sm:h-8 rounded-full"
-                        />
-                      )}
+                  <button
+                    onClick={() => handleRemoveItem(item.id)}
+                    className="absolute -right-3 -top-3 sm:-right-4 sm:-top-4 md:-right-6 md:-top-4 transition-all duration-300 z-10 hover:scale-110"
+                  >
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-red-500/20 rounded-full blur-sm"></div>
+                      <MdDeleteForever className="relative w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 text-red-500 hover:text-red-400 transition-colors duration-300" />
                     </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="text-white text-sm sm:text-base">
-                      ${item.price}
-                    </div>
-                    <div className="text-[#60FC65] text-sm sm:text-base">
-                      Cash Back: ${(item.price * 0.05).toFixed(2)}
-                    </div>
-                  </div>
-                </div>
+                  </button>
 
-                {/* Quantity Box */}
-                <div
-                  className="w-[25%] sm:w-[193.62px] h-[104px] rounded-lg p-4 flex flex-col items-center justify-center"
-                  style={{
-                    background:
-                      "linear-gradient(147.43deg, rgba(255, 255, 255, 0.48) 5.2%, rgba(0, 0, 0, 0.48) 65.03%, rgba(255, 255, 255, 0.48) 124.85%)",
-                    border: "1px solid",
-                    borderImageSource:
-                      "linear-gradient(180deg, rgba(238, 255, 0, 0) 10.51%, rgba(0, 0, 0, 0) 58.55%)",
-                    boxShadow: "0px 13px 19px 0px #00000026",
-                    transform: "rotate(-180deg)",
-                  }}
-                >
-                  <div className="text-white mb-2 transform rotate-180 text-sm sm:text-base">
-                    {item.crystals} 💎
+                  {/* Mobile Layout */}
+                  <div className="sm:hidden space-y-3">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center whitespace-nowrap">
+                        <span className="text-white text-[11px]">
+                          Order Status:
+                        </span>
+                        <span className="text-[#60FC65] bg-[#468CD24D] w-[50px] h-[18px] rounded-full text-[10px] text-center flex items-center justify-center ml-2">
+                          Pending
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-white text-[11px]">
+                          {username}
+                        </span>
+                        {currentUser?.photoURL && (
+                          <img
+                            src={currentUser.photoURL}
+                            alt="Profile"
+                            className="w-5 h-5 rounded-full border border-[#EEAD22]/20"
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-white text-[11px] bg-[#121A22]/40 p-1.5 rounded-lg whitespace-nowrap">
+                        {item.crystals} 💎
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleQuantityChange(item.id, -1)}
+                          disabled={item.quantity <= 1}
+                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 ${
+                            item.quantity <= 1
+                              ? "bg-gray-600 cursor-not-allowed"
+                              : "bg-[#4E4E4E] hover:bg-[#5E5E5E]"
+                          }`}
+                          style={{ boxShadow: "0px 7px 13px 0px #FF99004F" }}
+                        >
+                          <FaMinus className="text-white w-2.5 h-2.5" />
+                        </button>
+                        <span className="text-white text-[11px] min-w-[1.5rem] text-center">
+                          {item.quantity || 1}
+                        </span>
+                        <button
+                          onClick={() => handleQuantityChange(item.id, 1)}
+                          className="w-6 h-6 rounded-full bg-[#4E4E4E] hover:bg-[#5E5E5E] text-white flex items-center justify-center transition-all duration-300"
+                          style={{ boxShadow: "0px 7px 13px 0px #FF99004F" }}
+                        >
+                          <FaPlus className="text-white w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center space-x-2 bg-[#121A22]/40 p-1.5 rounded-lg">
+                        <span className="text-white text-[11px] whitespace-nowrap">
+                          Price:
+                        </span>
+                        <span className="text-[#EEAD22] text-[11px] font-semibold">
+                          ${item.price}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2 bg-[#121A22]/40 p-1.5 rounded-lg">
+                        <span className="text-white text-[11px] whitespace-nowrap">
+                          Cash Back:
+                        </span>
+                        <span className="text-[#60FC65] text-[11px] font-semibold">
+                          ${(item.price * 0.05).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2 transform rotate-180">
-                    <button
-                      onClick={() => handleQuantityChange(item.id, -1)}
-                      className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#4E4E4E] text-white flex items-center justify-center text-sm sm:text-base"
-                      style={{ boxShadow: "0px 7px 13px 0px #FF99004F" }}
-                    >
-                      -
-                    </button>
-                    <span className="text-white text-sm sm:text-base">
-                      {item.quantity || 1}
-                    </span>
-                    <button
-                      onClick={() => handleQuantityChange(item.id, 1)}
-                      className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#4E4E4E] text-white flex items-center justify-center text-sm sm:text-base"
-                      style={{ boxShadow: "0px 7px 13px 0px #FF99004F" }}
-                    >
-                      +
-                    </button>
+
+                  {/* Desktop/Tablet Grid Layout */}
+                  <div className="hidden sm:grid grid-cols-3 gap-4">
+                    {/* First Row */}
+                    <div className="flex items-center">
+                      <div className="flex items-center whitespace-nowrap">
+                        <span className="text-white text-[11px] sm:text-base">
+                          Order Status:
+                        </span>
+                        <span className="text-[#60FC65] bg-[#468CD24D] w-[60px] h-[20px] md:w-[80px] md:h-[25px] rounded-full text-[11px] sm:text-base text-center flex items-center justify-center ml-3">
+                          Pending
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center pl-14">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-white text-[11px] sm:text-base whitespace-nowrap">
+                          {username}
+                        </span>
+                        {currentUser?.photoURL && (
+                          <img
+                            src={currentUser.photoURL}
+                            alt="Profile"
+                            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-[#EEAD22]/20"
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center pl-16">
+                      <div className="text-white text-[11px] sm:text-base bg-[#121A22]/40 p-2 rounded-lg whitespace-nowrap">
+                        {item.crystals} 💎
+                      </div>
+                    </div>
+
+                    {/* Second Row */}
+                    <div className="flex items-center">
+                      <div className="flex items-center space-x-3 bg-[#121A22]/40 p-2 rounded-lg">
+                        <span className="text-white text-[11px] sm:text-base whitespace-nowrap">
+                          Price:
+                        </span>
+                        <span className="text-[#EEAD22] text-[11px] sm:text-base font-semibold">
+                          ${item.price}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center pl-10">
+                      <div className="flex items-center space-x-3 bg-[#121A22]/40 p-2 rounded-lg">
+                        <span className="text-white text-[11px] sm:text-base whitespace-nowrap">
+                          Cash Back:
+                        </span>
+                        <span className="text-[#60FC65] text-[11px] sm:text-base font-semibold">
+                          ${(item.price * 0.05).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center pl-14">
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={() => handleQuantityChange(item.id, -1)}
+                          disabled={item.quantity <= 1}
+                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                            item.quantity <= 1
+                              ? "bg-gray-600 cursor-not-allowed"
+                              : "bg-[#4E4E4E] hover:bg-[#5E5E5E]"
+                          }`}
+                          style={{ boxShadow: "0px 7px 13px 0px #FF99004F" }}
+                        >
+                          <FaMinus className="text-white w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                        <span className="text-white text-[11px] sm:text-base min-w-[2rem] text-center">
+                          {item.quantity || 1}
+                        </span>
+                        <button
+                          onClick={() => handleQuantityChange(item.id, 1)}
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#4E4E4E] hover:bg-[#5E5E5E] text-white flex items-center justify-center transition-all duration-300"
+                          style={{ boxShadow: "0px 7px 13px 0px #FF99004F" }}
+                        >
+                          <FaPlus className="text-white w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -285,17 +434,15 @@ const Payment = () => {
           <div className="mt-6 sm:mt-8 max-w-md mx-auto px-4 sm:px-0">
             <div className="flex justify-between text-white py-3 border-b border-[#F9D94D]/20 text-sm sm:text-base">
               <span>Orders Price:</span>
-              <span>${calculateTotal().toFixed(2)}</span>
+              <span>${orderTotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-white py-3 border-b border-[#F9D94D]/20 text-sm sm:text-base">
               <span>Taxes:</span>
-              <span>${(calculateTotal() * 0.3).toFixed(2)}</span>
+              <span>${taxAmount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-[#F9D94D] font-bold text-lg sm:text-xl py-3">
               <span>Total:</span>
-              <span>
-                ${(calculateTotal() + calculateTotal() * 0.3).toFixed(2)}
-              </span>
+              <span>${finalTotal.toFixed(2)}</span>
             </div>
           </div>
 

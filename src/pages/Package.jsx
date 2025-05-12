@@ -15,6 +15,7 @@ const Package = () => {
   const [username, setUsername] = useState("Player3632"); // Initial username
   const [isRestricted, setIsRestricted] = useState(false);
   const [showRestrictedPopup, setShowRestrictedPopup] = useState(false);
+  const [showEmptyCartDialog, setShowEmptyCartDialog] = useState(false);
   const [cart, setCart] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [showCartModal, setShowCartModal] = useState(false);
@@ -25,14 +26,7 @@ const Package = () => {
     addToCart,
     removeFromCart,
     handleBuyNow,
-    showCheckoutModal,
-    setShowCheckoutModal,
-    handleCheckout,
-    handleContinueShopping,
-    handleAddAndCheckout,
     handleCartClick,
-    pendingItem,
-    setPendingItem,
   } = useCart();
 
   // Available packages with diamond classifications
@@ -145,7 +139,6 @@ const Package = () => {
   };
 
   const handlePaymentCheckout = () => {
-    setShowCartModal(false);
     navigate("/payment", {
       state: {
         cart: cartItems,
@@ -155,6 +148,14 @@ const Package = () => {
           "User",
       },
     });
+  };
+
+  const handleCartIconClick = () => {
+    if (cartItems.length === 0) {
+      setShowEmptyCartDialog(true);
+    } else {
+      handlePaymentCheckout();
+    }
   };
 
   return (
@@ -183,7 +184,7 @@ const Package = () => {
             </Link>
             <div className="relative">
               <button
-                onClick={() => setShowCartModal(true)}
+                onClick={handleCartIconClick}
                 className="relative inline-flex gap-4 items-center justify-center px-6 py-3 overflow-hidden font-medium text-white transition-all duration-300 ease-out rounded-lg shadow-lg group bg-[#121A22]/40 border border-[#EEAD22]/20 hover:bg-[#121A22]/60 hover:shadow-[#EEAD22]/20"
               >
                 <img src={cartIcon} alt="Cart" className="w-6 h-6 mr-2" />
@@ -267,7 +268,7 @@ const Package = () => {
             </div>
 
             {/* User Card with Background Images */}
-            <div className="sticky top-20 z-40 mb-8">
+            <div className=" top-20 z-40 mb-8">
               <div className="relative rounded-lg overflow-hidden border border-[#EEAD22]/30 backdrop-blur-lg h-[250px] max-w-[800px] mx-auto">
                 {/* Background Images Container */}
                 <div className="absolute inset-0 flex">
@@ -306,171 +307,95 @@ const Package = () => {
             </div>
 
             {/* Packages Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1000px] mx-auto">
+            <div className="grid grid-cols-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6 max-w-[1000px] mx-auto">
               {packages.map((pkg) => (
                 <motion.div
                   key={pkg.id}
                   whileHover={{ scale: 1.02 }}
-                  className={`bg-gradient-to-br from-[#121A22]/80 to-[#1A1A1A]/80 rounded-lg p-4 border ${
+                  className={`bg-gradient-to-br from-[#121A22]/80 to-[#1A1A1A]/80 rounded-lg border ${
                     pkg.popular ? "border-[#EEAD22]" : "border-[#EEAD22]/20"
                   } backdrop-blur-lg hover:border-[#EEAD22]/50 transition-all duration-300 relative shadow-lg hover:shadow-[#EEAD22]/10`}
                 >
-                  {pkg.popular && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-[#EEAD22] to-[#FFD700] text-white px-4 py-1 rounded-full text-sm font-bold">
-                      Most Popular
+                  {/* Mobile Layout */}
+                  <div className="sm:hidden flex flex-col h-full">
+                    {pkg.popular && (
+                      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-[#EEAD22] to-[#FFD700] text-white px-1 py-0.5 rounded-full text-[7px] font-bold">
+                        Popular
+                      </div>
+                    )}
+                    <div className="p-1.5 flex flex-col items-center">
+                      <div className="text-[9px] font-bold text-[#EEAD22] mb-0.5">
+                        {pkg.crystals} 💎
+                      </div>
+                      <div className="flex items-center space-x-1 mb-1">
+                        <div className="text-[8px] font-bold text-[#EEAD22]">
+                          ${pkg.price}
+                        </div>
+                        <div className="text-[7px] text-[#EEAD22]/80">
+                          (${pkg.cashPrice})
+                        </div>
+                      </div>
+                      <div className="flex space-x-0.5 w-full">
+                        <button
+                          onClick={() => handleBuyNow(pkg)}
+                          className="flex-1 bg-gradient-to-r from-[#EEAD22] to-[#FFD700] hover:from-[#FFD700] hover:to-[#EEAD22] text-white px-0.5 py-0.5 rounded text-[7px] transition-all duration-300 shadow-lg hover:shadow-[#EEAD22]/20"
+                        >
+                          Buy
+                        </button>
+                        <button
+                          onClick={() => handleAddToCart(pkg)}
+                          className="flex-1 bg-white/10 hover:bg-white/20 text-white px-0.5 py-0.5 rounded text-[7px] transition-colors"
+                        >
+                          Cart
+                        </button>
+                      </div>
                     </div>
-                  )}
-                  <h3 className="text-2xl font-semibold mb-2 text-[#EEAD22]">
-                    {pkg.name}
-                  </h3>
-                  <div className="text-3xl font-bold mb-2 text-[#EEAD22]">
-                    {pkg.crystals} 💎
                   </div>
-                  <div className="text-lg text-[#EEAD22]/80 mb-4">
-                    ({pkg.crystalBreakdown})
-                  </div>
-                  <div className="flex flex-col space-y-2 mb-6">
-                    <div className="text-xl font-bold text-[#EEAD22]">
-                      ${pkg.price}
+
+                  {/* Desktop/Tablet Layout */}
+                  <div className="hidden sm:block p-4">
+                    {pkg.popular && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-[#EEAD22] to-[#FFD700] text-white px-4 py-1 rounded-full text-sm font-bold">
+                        Most Popular
+                      </div>
+                    )}
+                    <h3 className="text-2xl font-semibold mb-2 text-[#EEAD22]">
+                      {pkg.name}
+                    </h3>
+                    <div className="text-3xl font-bold mb-2 text-[#EEAD22]">
+                      {pkg.crystals} 💎
                     </div>
-                    <div className="text-lg text-[#EEAD22]/80">
-                      Cash Pack: ${pkg.cashPrice}
+                    <div className="text-lg text-[#EEAD22]/80 mb-4">
+                      ({pkg.crystalBreakdown})
                     </div>
-                  </div>
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => handleBuyNow(pkg)}
-                      className="flex-1 bg-gradient-to-r from-[#EEAD22] to-[#FFD700] hover:from-[#FFD700] hover:to-[#EEAD22] text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-[#EEAD22]/20"
-                    >
-                      Buy Now
-                    </button>
-                    <button
-                      onClick={() => handleAddToCart(pkg)}
-                      className="flex-1 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      Add to Cart
-                    </button>
+                    <div className="flex flex-col space-y-2 mb-6">
+                      <div className="text-xl font-bold text-[#EEAD22]">
+                        ${pkg.price}
+                      </div>
+                      <div className="text-lg text-[#EEAD22]/80">
+                        Cash Pack: ${pkg.cashPrice}
+                      </div>
+                    </div>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => handleBuyNow(pkg)}
+                        className="flex-1 bg-gradient-to-r from-[#EEAD22] to-[#FFD700] hover:from-[#FFD700] hover:to-[#EEAD22] text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-lg hover:shadow-[#EEAD22]/20"
+                      >
+                        Buy Now
+                      </button>
+                      <button
+                        onClick={() => handleAddToCart(pkg)}
+                        className="flex-1 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors"
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               ))}
             </div>
           </div>
         </div>
-
-        {/* Cart Modal */}
-        {showCartModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-            <div className="bg-[#121A22] p-6 rounded-lg max-w-lg w-full mx-4 backdrop-blur-lg border border-[#EEAD22]/20">
-              <h3 className="text-2xl font-bold mb-4 text-[#EEAD22]">
-                Shopping Cart
-              </h3>
-              <div className="mb-6 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-                {cartItems.length === 0 ? (
-                  <div className="text-center">
-                    <p className="text-gray-400 mb-8">Your cart is empty</p>
-                    <button
-                      onClick={() => setShowCartModal(false)}
-                      className="bg-[#EEAD22] hover:bg-[#EEAD22]/90 text-white px-24 py-2 rounded-lg transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                ) : (
-                  cartItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="mb-4 px-6 py-2 bg-white/5 rounded-lg flex justify-between items-center"
-                    >
-                      <div className="flex flex-col gap-1">
-                        <p className="text-[#EEAD22] font-semibold">
-                          {item.name}
-                        </p>
-                        <p className="text-[#EEAD22]">{item.crystals} 💎</p>
-                        <p className="text-[#EEAD22]">${item.price}</p>
-                      </div>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-              {cartItems.length > 0 && (
-                <div className="border-t border-[#EEAD22]/20 pt-4">
-                  <p className="text-xl font-bold mb-4 text-white">
-                    Total:{" "}
-                    <span className="text-[#EEAD22]">
-                      $
-                      {cartItems
-                        .reduce((sum, item) => sum + item.price, 0)
-                        .toFixed(2)}
-                    </span>
-                  </p>
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => setShowCartModal(false)}
-                      className="flex-1 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      Continue Shopping
-                    </button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handlePaymentCheckout}
-                      className="flex-1 bg-[#EEAD22] hover:bg-[#EEAD22]/90 text-white px-4 py-2 rounded-lg transition-colors shadow-lg hover:shadow-[#EEAD22]/20 flex items-center justify-center font-semibold"
-                    >
-                      <span className="mr-2">💳</span>
-                      Pay Now
-                    </motion.button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Buy Now Modal */}
-        {showCheckoutModal && pendingItem && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
-            <div className="bg-[#121A22] p-6 rounded-lg max-w-md w-full mx-4 backdrop-blur-lg border border-[#EEAD22]/20">
-              <h3 className="text-[#F9D94D] text-xl font-bold mb-4">
-                Would you like to:
-              </h3>
-              <div className="flex flex-col space-y-3">
-                <button
-                  onClick={handleCheckout}
-                  className="w-full bg-[#302F3C] text-white py-2 rounded-lg hover:bg-[#302F3C]/80"
-                >
-                  Clear Cart & Checkout with Selected Package
-                </button>
-                <button
-                  onClick={handleContinueShopping}
-                  className="w-full bg-[#F9D94D] text-[#07080A] py-2 rounded-lg hover:bg-[#F9D94D]/80"
-                >
-                  Add to Cart & Continue Shopping
-                </button>
-                <button
-                  onClick={handleAddAndCheckout}
-                  className="w-full bg-[#302F3C] text-white py-2 rounded-lg hover:bg-[#302F3C]/80"
-                >
-                  Add to Cart & Proceed to Checkout
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCheckoutModal(false);
-                    setPendingItem(null);
-                  }}
-                  className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Restricted Country Popup */}
         {showRestrictedPopup && (
@@ -489,6 +414,26 @@ const Package = () => {
               >
                 Close
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Empty Cart Dialog */}
+        {showEmptyCartDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
+            <div className="bg-[#121A22] p-6 rounded-lg max-w-md mx-4 backdrop-blur-lg border border-[#EEAD22]/20">
+              <h3 className="text-xl font-bold text-center text-[#EEAD22] mb-4">
+                Empty Cart
+              </h3>
+              <p className="text-gray-300 mb-6">Your cart is empty.</p>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setShowEmptyCartDialog(false)}
+                  className="bg-[#EEAD22] hover:bg-[#EEAD22]/90 text-white px-6 py-2 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}

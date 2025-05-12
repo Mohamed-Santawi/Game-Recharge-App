@@ -69,12 +69,12 @@ export const CartProvider = ({ children }) => {
   };
 
   const handleBuyNow = (item) => {
-    setPendingItem(item);
-    setShowCheckoutModal(true);
+    addToCart(item);
+    window.location.href = "/payment";
   };
 
   const handleCartClick = () => {
-    setShowCheckoutModal(true);
+    window.location.href = "/payment";
   };
 
   const handleCheckout = () => {
