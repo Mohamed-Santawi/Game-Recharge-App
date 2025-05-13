@@ -86,7 +86,7 @@ const Package = () => {
       name: "Glory Pack",
       crystals: 50000,
       crystalBreakdown: "20000 + 30000",
-      price: 199.99,
+      price: 0.7,
       cashPrice: 179.99,
       features: ["Glory items", "Ultimate boost", "Personal support"],
       popular: false,
@@ -236,12 +236,41 @@ const Package = () => {
         <div className="flex-grow p-4">
           <div className="max-w-7xl mx-auto">
             {/* Account Information Box */}
-            <div className="bg-[#121A22]/40 rounded-lg p-6 mb-8 border border-[#EEAD22]/10 backdrop-blur-lg">
-              <h2 className="text-2xl font-semibold mb-4 text-[#EEAD22]">
-                Account Information
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+            <div className="bg-[#121A22]/40 rounded-lg p-6 mb-8 border border-[#EEAD22]/10 backdrop-blur-lg sm:relative fixed bottom-0 left-0 right-0 z-50">
+              <div className="sm:block hidden">
+                <h2 className="text-2xl font-semibold mb-4 text-[#EEAD22]">
+                  Account Information
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Account ID
+                    </label>
+                    <input
+                      type="text"
+                      value={accountId.split(" ")[0]}
+                      onChange={handleIdChange}
+                      placeholder="Enter ID (e.g., 3632950)"
+                      className="w-full px-4 py-2 rounded-lg bg-white/5 border border-[#EEAD22]/20 focus:border-[#EEAD22] focus:ring-1 focus:ring-[#EEAD22] text-white placeholder-gray-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Port
+                    </label>
+                    <input
+                      type="text"
+                      value={port}
+                      readOnly
+                      className="w-full px-4 py-2 rounded-lg bg-white/5 border border-[#EEAD22]/20 text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Layout */}
+              <div className="sm:hidden flex items-center space-x-3">
+                <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Account ID
                   </label>
@@ -253,7 +282,7 @@ const Package = () => {
                     className="w-full px-4 py-2 rounded-lg bg-white/5 border border-[#EEAD22]/20 focus:border-[#EEAD22] focus:ring-1 focus:ring-[#EEAD22] text-white placeholder-gray-400"
                   />
                 </div>
-                <div>
+                <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Port
                   </label>
