@@ -107,33 +107,42 @@ const Home = () => {
             <div className="flex items-center space-x-4">
               {currentUser ? (
                 <div className="flex items-center space-x-4">
+                  <div className="text-white mr-4">
+                    Welcome,{" "}
+                    <span className="font-semibold">
+                      {currentUser.displayName || currentUser.email}
+                    </span>
+                  </div>
                   <button
                     onClick={handleWalletClick}
-                    className="relative inline-flex items-center justify-center px-8 py-3 overflow-hidden font-medium text-white transition-all duration-300 ease-out rounded-lg shadow-lg group bg-[#121A22]/40 border border-white/5 hover:bg-[#121A22]/60 hover:shadow-primary/20 before:absolute before:bottom-0 before:left-0 before:w-full before:h-0.5 before:bg-white/10 before:transition-all before:duration-300 hover:before:bg-primary/80"
+                    className="relative inline-flex items-center justify-center px-8 py-3 overflow-hidden font-medium text-white transition-all duration-300 ease-out rounded-lg shadow-lg group bg-primary/80 hover:bg-primary border border-white/5 hover:shadow-primary/20 before:absolute before:bottom-0 before:left-0 before:w-full before:h-0.5 before:bg-white/10 before:transition-all before:duration-300 hover:before:bg-primary/80"
                   >
                     <span className="mr-2">💰</span>
-                    Wallet
+                    My Wallet
                   </button>
                   <div className="relative group">
                     <button className="flex items-center space-x-2">
-                      {currentUser.photoURL ? (
-                        <img
-                          src={currentUser.photoURL}
-                          alt="Profile"
-                          className="w-10 h-10 rounded-full border-2 border-white/20"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-[#60A5FA] flex items-center justify-center text-white font-bold">
-                          {userInitial}
-                        </div>
-                      )}
+                      <div className="w-10 h-10 rounded-full bg-[#60A5FA] flex items-center justify-center text-white font-bold">
+                        {userInitial}
+                      </div>
                     </button>
                     <div className="absolute right-0 mt-2 w-48 bg-[#121A22]/90 rounded-lg shadow-lg border border-white/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                       <div className="py-2">
-                        <div className="px-4 py-2 text-white">
-                          {currentUser.displayName}
+                        <div className="px-4 py-2 text-white border-b border-white/10">
+                          {currentUser.displayName || currentUser.email}
                         </div>
+                        <button
+                          onClick={() => navigate("/wallet")}
+                          className="w-full text-left px-4 py-2 text-white hover:bg-white/10"
+                        >
+                          My Wallet
+                        </button>
+                        <button
+                          onClick={() => navigate("/package")}
+                          className="w-full text-left px-4 py-2 text-white hover:bg-white/10"
+                        >
+                          Game Packages
+                        </button>
                         <button
                           onClick={handleSignOut}
                           className="w-full text-left px-4 py-2 text-white hover:bg-white/10"

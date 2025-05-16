@@ -86,7 +86,7 @@ const Package = () => {
       name: "Glory Pack",
       crystals: 50000,
       crystalBreakdown: "20000 + 30000",
-      price: 0.7,
+      price: 0.1,
       cashPrice: 179.99,
       features: ["Glory items", "Ultimate boost", "Personal support"],
       popular: false,
@@ -202,18 +202,9 @@ const Package = () => {
             </div>
             <div className="relative group">
               <button className="flex items-center space-x-2">
-                {currentUser.photoURL ? (
-                  <img
-                    src={currentUser.photoURL}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full border-2 border-[#EEAD22]/20"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-[#EEAD22] flex items-center justify-center text-white font-bold">
-                    {currentUser?.displayName?.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <div className="w-10 h-10 rounded-full bg-[#EEAD22] flex items-center justify-center text-white font-bold">
+                  {currentUser?.displayName?.charAt(0).toUpperCase()}
+                </div>
               </button>
               <div className="absolute right-0 mt-2 w-48 bg-[#121A22]/90 rounded-lg shadow-lg border border-[#EEAD22]/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                 <div className="py-2">
@@ -468,7 +459,7 @@ const Package = () => {
         )}
 
         {/* Add custom scrollbar styles */}
-        <style jsx>{`
+        <style>{`
           .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
           }

@@ -6,396 +6,158 @@ import { useCart } from "../contexts/CartContext";
 import { MdDeleteForever } from "react-icons/md";
 import { FaPlus, FaMinus } from "react-icons/fa";
 import paymentBg from "../assets/payment.webp";
-import visa from "../assets/visa.png";
-import mastercard from "../assets/master.png";
 import paypal from "../assets/paypal.png";
-
-import cartIcon from "../assets/cart.png";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import { loadStripe } from "@stripe/stripe-js";
-import {
-  Elements,
-  CardElement,
-  useStripe,
-  useElements,
-} from "@stripe/react-stripe-js";
-
-// Initialize Stripe
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ""
-);
-
-// Card Element styling
-const cardElementOptions = {
-  style: {
-    base: {
-      fontSize: "16px",
-      color: "#ffffff",
-      "::placeholder": {
-        color: "#aab7c4",
-      },
-      backgroundColor: "#302F3C",
-    },
-    invalid: {
-      color: "#fa755a",
-      iconColor: "#fa755a",
-    },
-  },
-};
-
-// Stripe Payment Form Component
-const StripePaymentForm = ({ amount, onSuccess, onError }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState(null);
-  const [paymentStatus, setPaymentStatus] = useState("initial"); // 'initial', 'processing', 'success', 'error'
-  const [paymentMessage, setPaymentMessage] = useState("");
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
-
-    setIsProcessing(true);
-    setError(null);
-    setPaymentStatus("processing");
-    setPaymentMessage("Processing your payment...");
-
-    try {
-      const { error, paymentMethod } = await stripe.createPaymentMethod({
-        type: "card",
-        card: elements.getElement(CardElement),
-      });
-
-      if (error) {
-        setError(error.message);
-        setPaymentStatus("error");
-        setPaymentMessage(error.message);
-        onError(error);
-      } else {
-        onSuccess(paymentMethod);
-      }
-    } catch (err) {
-      setError("An unexpected error occurred.");
-      setPaymentStatus("error");
-      setPaymentMessage("An unexpected error occurred.");
-      onError(err);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="bg-[#302F3C]/80 backdrop-blur-sm rounded-lg p-4">
-        <CardElement options={cardElementOptions} />
-      </div>
-      {error && <div className="text-red-500 text-sm">{error}</div>}
-      <button
-        type="submit"
-        disabled={!stripe || isProcessing}
-        className={`w-full bg-[#F9D94D] text-[#07080A] font-bold py-3 sm:py-4 rounded-lg transition-all duration-300 text-base sm:text-lg ${
-          !stripe || isProcessing
-            ? "opacity-50 cursor-not-allowed"
-            : "hover:bg-[#F9D94D]/80 hover:shadow-lg hover:shadow-[#F9D94D]/20"
-        }`}
-      >
-        {isProcessing ? "Processing..." : `Pay $${amount.toFixed(2)}`}
-      </button>
-    </form>
-  );
-};
-
-// Add font preload
-const fontPreload = () => {
-  const link = document.createElement("link");
-  link.rel = "preload";
-  link.as = "font";
-  link.href =
-    "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
-  link.crossOrigin = "anonymous";
-  document.head.appendChild(link);
-};
 
 // PayPal configuration
 const initialOptions = {
-  clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "test",
+  clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID || "",
   currency: "USD",
   intent: "capture",
-  components: "buttons",
-};
-
-// Card Payment Form Component
-const CardPaymentForm = ({ amount, onSuccess, onError }) => {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState(null);
-  const [paymentStatus, setPaymentStatus] = useState("initial");
-  const [paymentMessage, setPaymentMessage] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [cvv, setCvv] = useState("");
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setIsProcessing(true);
-    setError(null);
-    setPaymentStatus("processing");
-    setPaymentMessage("Processing your payment...");
-
-    try {
-      console.log("Starting payment process...");
-      console.log("Card details:", {
-        number: cardNumber.replace(/\s/g, ""),
-        expiry: expiryDate,
-        cvv: cvv,
-      });
-
-      // Create PayPal order with card details
-      const response = await fetch(
-        "http://localhost:5000/api/create-paypal-order",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount: amount,
-            cardDetails: {
-              number: cardNumber.replace(/\s/g, ""),
-              expiry: expiryDate,
-              cvv: cvv,
-            },
-          }),
-        }
-      );
-
-      const orderData = await response.json();
-      console.log("PayPal order created:", orderData);
-
-      if (!response.ok) {
-        throw new Error(orderData.error || "Failed to create payment order");
-      }
-
-      setPaymentMessage("Order created. Capturing payment...");
-
-      // Capture the payment
-      console.log("Capturing payment for order:", orderData.orderId);
-      const captureResponse = await fetch(
-        "http://localhost:5000/api/capture-paypal-order",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            orderId: orderData.orderId,
-          }),
-        }
-      );
-
-      const captureData = await captureResponse.json();
-      console.log("Payment capture response:", captureData);
-
-      if (!captureResponse.ok) {
-        throw new Error(captureData.error || "Failed to capture payment");
-      }
-
-      if (captureData.status === "COMPLETED") {
-        setPaymentStatus("success");
-        setPaymentMessage(
-          `Payment successful! $${captureData.amount} has been withdrawn from your account. Transaction ID: ${captureData.paymentId}`
-        );
-        onSuccess(captureData);
-      } else {
-        throw new Error(`Payment failed with status: ${captureData.status}`);
-      }
-    } catch (err) {
-      console.error("Payment error:", err);
-      setError(err.message);
-      setPaymentStatus("error");
-      setPaymentMessage(err.message);
-      onError(err);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Format card number with spaces
-  const formatCardNumber = (value) => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
-    const matches = v.match(/\d{4,16}/g);
-    const match = (matches && matches[0]) || "";
-    const parts = [];
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    if (parts.length) {
-      return parts.join(" ");
-    } else {
-      return value;
-    }
-  };
-
-  // Format expiry date
-  const formatExpiryDate = (value) => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
-    if (v.length >= 3) {
-      return `${v.substring(0, 2)}/${v.substring(2, 4)}`;
-    }
-    return v;
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="bg-[#302F3C]/80 backdrop-blur-sm rounded-lg p-4">
-        <div className="space-y-4">
-          {/* Card Number Input */}
-          <div>
-            <label className="block text-white text-sm mb-2">Card Number</label>
-            <input
-              type="text"
-              value={cardNumber}
-              onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-              placeholder="1234 5678 9012 3456"
-              maxLength="19"
-              className="w-full bg-[#302F3C] text-white border border-gray-600 rounded-lg px-4 py-2 focus:border-[#F9D94D] focus:outline-none"
-              required
-            />
-          </div>
-
-          {/* Expiry Date and CVV */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-white text-sm mb-2">
-                Expiry Date
-              </label>
-              <input
-                type="text"
-                value={expiryDate}
-                onChange={(e) =>
-                  setExpiryDate(formatExpiryDate(e.target.value))
-                }
-                placeholder="MM/YY"
-                maxLength="5"
-                className="w-full bg-[#302F3C] text-white border border-gray-600 rounded-lg px-4 py-2 focus:border-[#F9D94D] focus:outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-white text-sm mb-2">CVV</label>
-              <input
-                type="text"
-                value={cvv}
-                onChange={(e) =>
-                  setCvv(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))
-                }
-                placeholder="123"
-                maxLength="3"
-                className="w-full bg-[#302F3C] text-white border border-gray-600 rounded-lg px-4 py-2 focus:border-[#F9D94D] focus:outline-none"
-                required
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {error && <div className="text-red-500 text-sm">{error}</div>}
-
-      <button
-        onClick={handleSubmit}
-        disabled={isProcessing}
-        className={`w-full bg-[#F9D94D] text-[#07080A] font-bold py-3 sm:py-4 rounded-lg transition-all duration-300 text-base sm:text-lg ${
-          isProcessing
-            ? "opacity-50 cursor-not-allowed"
-            : "hover:bg-[#F9D94D]/80 hover:shadow-lg hover:shadow-[#F9D94D]/20"
-        }`}
-      >
-        {isProcessing ? "Processing..." : `Pay $${amount.toFixed(2)}`}
-      </button>
-
-      {paymentStatus !== "initial" && (
-        <div
-          className={`mt-4 p-4 rounded-lg ${
-            paymentStatus === "success"
-              ? "bg-green-500/20 border border-green-500/50"
-              : paymentStatus === "error"
-              ? "bg-red-500/20 border border-red-500/50"
-              : "bg-yellow-500/20 border border-yellow-500/50"
-          }`}
-        >
-          <p
-            className={`text-center ${
-              paymentStatus === "success"
-                ? "text-green-400"
-                : paymentStatus === "error"
-                ? "text-red-400"
-                : "text-yellow-400"
-            }`}
-          >
-            {paymentMessage}
-          </p>
-        </div>
-      )}
-    </div>
-  );
+  components: "buttons,card-fields",
+  "enable-funding": "card",
+  "disable-funding": "paylater,venmo",
+  "data-sdk-integration-source": "button-factory",
+  vault: false,
+  "data-namespace": "PayPalSDK",
+  "data-client-token": "",
+  "data-page-type": "checkout",
+  "data-merchant-id": "",
+  "data-partner-attribution-id": "",
+  "data-csp-nonce": "",
+  "data-currency": "USD",
+  "data-intent": "capture",
+  "data-commit": "true",
+  "data-vault": "false",
+  "data-disable-funding": "paylater,venmo",
+  "data-enable-funding": "card",
+  "data-components": "buttons,card-fields",
+  "data-sdk-integration-source": "button-factory",
+  "data-sdk-client-token": "",
+  "data-sdk-partner-attribution-id": "",
+  "data-sdk-merchant-id": "",
+  "data-sdk-currency": "USD",
+  "data-sdk-intent": "capture",
+  "data-sdk-commit": "true",
+  "data-sdk-vault": "false",
+  "data-sdk-disable-funding": "paylater,venmo",
+  "data-sdk-enable-funding": "card",
+  "data-sdk-components": "buttons,card-fields",
+  "data-sdk-sdk-integration-source": "button-factory",
 };
 
 // PayPal Buttons Component
 const PayPalButtonsComponent = ({ amount, onSuccess, onError }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+  // Format amount to exactly 2 decimal places
+  const formatAmount = (value) => {
+    return Number(value).toFixed(2);
+  };
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+    if (!clientId) {
+      setLoadError(
+        new Error(
+          "PayPal client ID is not configured. Please check your environment variables."
+        )
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    setLoadError(null);
+    setIsLoading(true);
+
+    const script = document.createElement("script");
+    script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture&components=buttons,card-fields&enable-funding=card&disable-funding=paylater,venmo&vault=false&commit=true`;
+    script.async = true;
+    script.onload = () => setIsLoading(false);
+    script.onerror = () => {
+      setLoadError(new Error("Failed to load PayPal. Please try again later."));
+      setIsLoading(false);
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
+  if (loadError) {
+    return (
+      <div className="text-red-500 text-center mb-4">{loadError.message}</div>
+    );
+  }
+
   return (
-    <PayPalScriptProvider options={initialOptions}>
-      <PayPalButtons
-        style={{
-          layout: "vertical",
-          color: "gold",
-          shape: "rect",
-          label: "pay",
-        }}
-        createOrder={async () => {
-          const response = await fetch(
-            "http://localhost:5000/api/create-paypal-order",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                amount: amount,
-              }),
-            }
-          );
-          const orderData = await response.json();
-          return orderData.orderId;
-        }}
-        onApprove={async (data, actions) => {
-          const response = await fetch(
-            "http://localhost:5000/api/capture-paypal-order",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                orderId: data.orderID,
-              }),
-            }
-          );
-          const captureData = await response.json();
-          if (response.ok) {
-            onSuccess(captureData);
-          } else {
-            onError(new Error(captureData.error));
-          }
-        }}
-        onError={(err) => {
-          console.error("PayPal Error:", err);
-          onError(err);
-        }}
-      />
-    </PayPalScriptProvider>
+    <div className="min-h-[150px] w-full flex items-center justify-center">
+      {isLoading && (
+        <div className="text-white text-center text-sm sm:text-base">
+          Loading PayPal...
+        </div>
+      )}
+      {!isLoading && !loadError && (
+        <PayPalScriptProvider options={initialOptions}>
+          <div className="w-full">
+            <PayPalButtons
+              style={{
+                layout: "vertical",
+                color: "black",
+                shape: "rect",
+                label: "pay",
+                height: window.innerWidth < 640 ? 35 : 45,
+                tagline: false,
+                width: "100%",
+              }}
+              className="w-full"
+              fundingSource="card"
+              createOrder={(data, actions) => {
+                return actions.order.create({
+                  purchase_units: [
+                    {
+                      amount: {
+                        value: formatAmount(amount),
+                        currency_code: "USD",
+                      },
+                    },
+                  ],
+                  application_context: {
+                    shipping_preference: "NO_SHIPPING",
+                    user_action: "PAY_NOW",
+                    brand_name: "Game Recharge Store",
+                    locale: "en-US",
+                    landing_page: "NO_PREFERENCE",
+                    return_url: window.location.origin,
+                    cancel_url: window.location.origin,
+                  },
+                });
+              }}
+              onApprove={async (data, actions) => {
+                try {
+                  const order = await actions.order.capture();
+                  onSuccess(order);
+                } catch (error) {
+                  onError(error);
+                }
+              }}
+              onError={(err) => {
+                setLoadError(err);
+                onError(err);
+              }}
+              onCancel={() => {
+                // Silently handle cancellation without showing error
+                return;
+              }}
+            />
+          </div>
+        </PayPalScriptProvider>
+      )}
+    </div>
   );
 };
 
@@ -405,12 +167,7 @@ const Payment = () => {
   const { currentUser, signOut } = useAuth();
   const { cartItems, clearCart, updateCartItemQuantity, removeFromCart } =
     useCart();
-  const [paymentMethod, setPaymentMethod] = useState("direct_card");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [cvv, setCvv] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showPayPalButtons, setShowPayPalButtons] = useState(false);
+  const [isPayPalLoading, setIsPayPalLoading] = useState(true);
   const [paypalError, setPaypalError] = useState(null);
   const [localItems, setLocalItems] = useState(
     location.state?.cart || cartItems
@@ -418,13 +175,9 @@ const Payment = () => {
   const [orderTotal, setOrderTotal] = useState(0);
   const [taxAmount, setTaxAmount] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
-  const [paymentStatus, setPaymentStatus] = useState("initial"); // 'initial', 'processing', 'success', 'error'
+  const [paymentStatus, setPaymentStatus] = useState("initial");
   const [paymentMessage, setPaymentMessage] = useState("");
-
-  // Preload fonts on component mount
-  useEffect(() => {
-    fontPreload();
-  }, []);
+  const [showPayPalButtons, setShowPayPalButtons] = useState(false);
 
   // Update localItems when cartItems changes
   useEffect(() => {
@@ -494,134 +247,27 @@ const Payment = () => {
     }
   };
 
-  const handleStripeSuccess = async (paymentMethod) => {
+  const handlePayPalSuccess = async () => {
     try {
-      setIsProcessing(true);
-      setPaymentStatus("processing");
-      setPaymentMessage("Confirming payment with your bank...");
-
-      // Create payment intent on the backend
-      const response = await fetch(
-        "http://localhost:5000/api/create-payment-intent",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount: finalTotal,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create payment intent");
-      }
-
-      const data = await response.json();
-
-      // Confirm the payment with the payment method
-      const { error: confirmError, paymentIntent } =
-        await stripePromise.confirmCardPayment(data.clientSecret, {
-          payment_method: paymentMethod.id,
-        });
-
-      if (confirmError) {
-        throw new Error(confirmError.message);
-      }
-
-      if (paymentIntent.status === "succeeded") {
-        setPaymentStatus("success");
-        setPaymentMessage(
-          "Payment successful! Your bank has confirmed the transaction."
-        );
-        clearCart();
-
-        // Show success message for 3 seconds before redirecting
-        setTimeout(() => {
-          navigate("/");
-        }, 3000);
-      }
-    } catch (error) {
-      console.error("Payment error:", error);
-      setPaymentStatus("error");
-      setPaymentMessage(
-        `Payment failed: ${error.message || "An unexpected error occurred"}`
-      );
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleStripeError = (error) => {
-    console.error("Stripe error:", error);
-    alert("Payment failed: " + error.message);
-  };
-
-  const handlePayPalSuccess = async (data, actions) => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/capture-paypal-order",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            orderId: data.orderID,
-          }),
-        }
-      );
-
-      const captureData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          captureData.error || "Failed to capture PayPal payment"
-        );
-      }
-
+      setPaymentStatus("success");
+      setPaymentMessage("Payment successful! Your order has been processed.");
       clearCart();
-      alert("Payment completed successfully!");
-      navigate("/");
+
+      setTimeout(() => {
+        navigate("/");
+      }, 3000);
     } catch (error) {
-      console.error("PayPal capture error:", error);
-      alert("Payment failed: " + error.message);
+      setPaymentStatus("error");
+      setPaymentMessage("Failed to process payment. Please try again.");
     }
   };
 
   const handlePayPalError = (err) => {
-    setPaypalError(err);
-    alert("PayPal payment failed. Please try again.");
-    console.error("PayPal Error:", err);
-  };
-
-  const createPayPalOrder = async (data, actions) => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/create-paypal-order",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount: finalTotal,
-          }),
-        }
-      );
-
-      const orderData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(orderData.error || "Failed to create PayPal order");
-      }
-
-      return orderData.orderId;
-    } catch (error) {
-      console.error("PayPal order creation error:", error);
-      throw error;
+    // Only show error if it's not a cancellation
+    if (err.message !== "Payment cancelled by user") {
+      setPaymentStatus("error");
+      setPaymentMessage(err.message || "Payment failed. Please try again.");
+      setPaypalError(err);
     }
   };
 
@@ -667,18 +313,9 @@ const Payment = () => {
             </Link>
             <div className="relative group">
               <button className="flex items-center space-x-2">
-                {currentUser.photoURL ? (
-                  <img
-                    src={currentUser.photoURL}
-                    alt="Profile"
-                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-[#EEAD22]/20"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#EEAD22] flex items-center justify-center text-white font-bold">
-                    {currentUser?.displayName?.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#EEAD22] flex items-center justify-center text-white font-bold">
+                  {currentUser?.displayName?.charAt(0).toUpperCase()}
+                </div>
               </button>
               <div className="absolute right-0 mt-2 w-48 bg-[#121A22]/90 rounded-lg shadow-lg border border-[#EEAD22]/20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                 <div className="py-2">
@@ -744,13 +381,9 @@ const Payment = () => {
                         <span className="text-white text-[11px]">
                           {username}
                         </span>
-                        {currentUser?.photoURL && (
-                          <img
-                            src={currentUser.photoURL}
-                            alt="Profile"
-                            className="w-5 h-5 rounded-full border border-[#EEAD22]/20"
-                          />
-                        )}
+                        <div className="w-5 h-5 rounded-full bg-[#EEAD22] flex items-center justify-center text-white text-xs font-bold">
+                          {currentUser?.displayName?.charAt(0).toUpperCase()}
+                        </div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
@@ -820,13 +453,9 @@ const Payment = () => {
                         <span className="text-white text-[11px] sm:text-base whitespace-nowrap">
                           {username}
                         </span>
-                        {currentUser?.photoURL && (
-                          <img
-                            src={currentUser.photoURL}
-                            alt="Profile"
-                            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-[#EEAD22]/20"
-                          />
-                        )}
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-[#EEAD22] flex items-center justify-center text-white font-bold">
+                          {currentUser?.displayName?.charAt(0).toUpperCase()}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center pl-16">
@@ -911,72 +540,32 @@ const Payment = () => {
                 Payment Details
               </h2>
               <div className="space-y-4 sm:space-y-6">
-                <div>
-                  <label className="block text-white mb-4 text-base sm:text-lg font-medium">
-                    Payment Method
-                  </label>
-                  <div className="flex gap-4">
-                    {/* Debit Card Box */}
-                    <div
-                      onClick={() => {
-                        setPaymentMethod("direct_card");
-                        setShowPayPalButtons(false);
-                      }}
-                      className={`w-[200px] h-[80px] rounded-[20px] p-4 cursor-pointer transition-all duration-300 ${
-                        paymentMethod === "direct_card"
-                          ? "bg-[#302F3C] border-2 border-[#F9D94D]"
-                          : "bg-[#302F3C]/80 hover:bg-[#302F3C]"
-                      }`}
-                    >
-                      <div className="flex justify-center items-center gap-2 mb-2">
-                        <img
-                          src={mastercard}
-                          alt="Mastercard"
-                          className="h-6"
-                        />
-                        <img src={visa} alt="Visa" className="h-6" />
-                      </div>
-                      <div className="text-center text-[#F9D94D] font-medium">
-                        Debit Card
-                      </div>
+                <div className="flex justify-center">
+                  <div
+                    onClick={() => setShowPayPalButtons(!showPayPalButtons)}
+                    className={`w-[177px] h-[80px] rounded-[20px] p-4 cursor-pointer transition-all duration-300 ${
+                      showPayPalButtons
+                        ? "bg-white border-2 border-[#F9D94D]"
+                        : "bg-white/80 hover:bg-white"
+                    }`}
+                  >
+                    <div className="flex justify-center items-center mb-2">
+                      <img src={paypal} alt="PayPal" className="h-8" />
                     </div>
-
-                    {/* PayPal Box */}
-                    <div
-                      onClick={() => {
-                        setPaymentMethod("paypal");
-                        setShowPayPalButtons(true);
-                      }}
-                      className={`w-[177px] h-[80px] rounded-[20px] p-4 cursor-pointer transition-all duration-300 ${
-                        paymentMethod === "paypal"
-                          ? "bg-white border-2 border-[#F9D94D]"
-                          : "bg-white/80 hover:bg-white"
-                      }`}
-                    >
-                      <div className="flex justify-center items-center mb-2">
-                        <img src={paypal} alt="PayPal" className="h-8" />
-                      </div>
-                      <div className="flex justify-center">
-                        <span className="text-[#003087] font-semibold text-sm">
-                          PayPal
-                        </span>
-                      </div>
+                    <div className="flex justify-center">
+                      <span className="text-[#003087] font-semibold text-sm">
+                        PayPal
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {paymentMethod === "direct_card" ? (
-                  <CardPaymentForm
-                    amount={finalTotal}
-                    onSuccess={handlePayPalSuccess}
-                    onError={handlePayPalError}
-                  />
-                ) : (
-                  <div className="mt-4">
+                {showPayPalButtons && (
+                  <div className="mt-4 w-full">
                     {paypalError ? (
-                      <div className="text-red-500 text-center mb-4">
-                        Failed to load PayPal. Please try again or use direct
-                        card payment.
+                      <div className="text-red-500 text-center mb-4 text-sm sm:text-base">
+                        {paypalError.message ||
+                          "Failed to load PayPal. Please try again."}
                       </div>
                     ) : (
                       <PayPalButtonsComponent
@@ -985,6 +574,31 @@ const Payment = () => {
                         onError={handlePayPalError}
                       />
                     )}
+                  </div>
+                )}
+
+                {/* Payment Status Message */}
+                {paymentStatus !== "initial" && (
+                  <div
+                    className={`mt-4 p-4 rounded-lg ${
+                      paymentStatus === "success"
+                        ? "bg-green-500/20 border border-green-500/50"
+                        : paymentStatus === "error"
+                        ? "bg-red-500/20 border border-red-500/50"
+                        : "bg-yellow-500/20 border border-yellow-500/50"
+                    }`}
+                  >
+                    <p
+                      className={`text-center ${
+                        paymentStatus === "success"
+                          ? "text-green-400"
+                          : paymentStatus === "error"
+                          ? "text-red-400"
+                          : "text-yellow-400"
+                      }`}
+                    >
+                      {paymentMessage}
+                    </p>
                   </div>
                 )}
               </div>

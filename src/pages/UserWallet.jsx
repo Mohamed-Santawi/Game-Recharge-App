@@ -8,18 +8,18 @@ import OrdersList from "../components/OrdersList";
 const UserWallet = () => {
   const {
     currentUser,
-    cashBackRate,
-    totalCashBack,
-    todaySpending,
-    orders,
-    referralEarnings,
-    referralCode,
-    discountCodes,
-    currentDiscountCode,
-    isAdmin,
+    cashBackRate = 0,
+    totalCashBack = 0,
+    todaySpending = 0,
+    orders = [],
+    referralEarnings = 0,
+    referralCode = "",
+    discountCodes = [],
+    currentDiscountCode = "",
+    isAdmin = false,
     updateDiscountCodePercentages,
     setUserDiscountCode,
-    getDiscountCodeProfits,
+    getDiscountCodeProfits = () => ({ userProfit: 0, customerProfit: 0 }),
   } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("orders");
@@ -235,7 +235,9 @@ const UserWallet = () => {
               {/* User Profile */}
               <div className="flex items-center space-x-4 mb-4 lg:mb-6">
                 <div className="w-10 h-10 lg:w-16 lg:h-16 bg-primary/20 rounded-full flex items-center justify-center text-lg lg:text-2xl font-bold text-white overflow-hidden">
-                  {renderProfileImage()}
+                  {currentUser.displayName?.[0] ||
+                    currentUser.email?.[0] ||
+                    "U"}
                 </div>
                 <div className="text-left">
                   <h2 className="text-base lg:text-xl font-bold text-white">
@@ -281,7 +283,7 @@ const UserWallet = () => {
                       Total Earned
                     </h3>
                     <p className="text-lg lg:text-2xl font-bold text-green-400">
-                      ${totalCashBack.toFixed(2)}
+                      ${(totalCashBack || 0).toFixed(2)}
                     </p>
                   </div>
                   <div className="text-center">
@@ -289,7 +291,7 @@ const UserWallet = () => {
                       Today's Spending
                     </h3>
                     <p className="text-lg lg:text-2xl font-bold text-red-400">
-                      ${todaySpending.toFixed(2)}
+                      ${(todaySpending || 0).toFixed(2)}
                     </p>
                   </div>
                 </div>

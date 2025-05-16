@@ -17,31 +17,23 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import Package from "./pages/Package";
 import Payment from "./pages/Payment";
+import AdminUsers from "./pages/AdminUsers";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
-
-  console.log("ProtectedRoute - currentUser:", currentUser); // Debug log
-  console.log("ProtectedRoute - loading:", loading); // Debug log
+  const location = useLocation();
 
   if (loading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{
-          background:
-            "linear-gradient(159.42deg, #060A0E 3.3%, #3B4550 48.96%, #192531 94.61%)",
-        }}
-      >
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-[#07080A]">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-[#F9D94D]"></div>
       </div>
     );
   }
 
   if (!currentUser) {
-    console.log("ProtectedRoute - Redirecting to login"); // Debug log
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return children;
@@ -101,6 +93,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Payment />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute>
+                    <AdminUsers />
                   </ProtectedRoute>
                 }
               />
